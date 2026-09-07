@@ -1,0 +1,17 @@
+model Enrollment {
+  id               String           @id @default(uuid())
+  studentId        String
+  courseOfferingId String
+  status           EnrollmentStatus
+  student          Student          @relation(fields: [studentId], references: [id])
+  courseOffering   CourseOffering   @relation(fields: [courseOfferingId], references: [id])
+  result           Result?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@unique([studentId, courseOfferingId])
+  @@index([studentId])
+  @@index([courseOfferingId])
+  @@index([status])
+  @@map("enrollments")
+}

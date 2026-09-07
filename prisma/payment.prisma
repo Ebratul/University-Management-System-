@@ -1,0 +1,19 @@
+model Payment {
+  id            String        @id @default(uuid())
+  studentId     String
+  semesterId    String
+  amount        Float
+  transactionId String        @unique
+  status        PaymentStatus
+  paymentMethod String
+  paidAt        DateTime?
+  student       Student       @relation(fields: [studentId], references: [id])
+  semester      Semester      @relation(fields: [semesterId], references: [id])
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([studentId])
+  @@index([semesterId])
+  @@index([status])
+  @@map("payments")
+}

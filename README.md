@@ -1,36 +1,38 @@
-# university-management-system
+# University Management System
 
-A minimal next app with Prisma 8 and Prisma Composer.
+Backend application using PostgreSQL and Prisma 6.
 
-## Run locally
+## Setup
 
-```bash
-npm run dev:composer
-```
-
-This builds the app and starts it with Composer. PostgreSQL projects get a local Prisma Postgres database and apply the contract automatically.
-
-## Deploy
+1. Copy `.env.example` to `.env`.
+2. Set `DATABASE_URL` to a PostgreSQL connection string.
+3. Install dependencies:
 
 ```bash
-npm run deploy
+npm install
 ```
 
-The deploy script builds the framework output, provisions Prisma Postgres when selected, applies migrations, and deploys the app to Prisma Compute.
-
-The starter users are inserted idempotently from `src/prisma/seed.ts` on the first database query through the Composer service binding.
-
-
-## Prisma
-
-- Contract: `src/prisma/contract.ts`
-- Prisma and Composer config: `prisma.config.ts`
-- Composer app: `module.ts` and `service.ts`
-
-After changing the contract, run:
+4. Generate the Prisma client:
 
 ```bash
-npm run contract:emit
+npm run prisma:generate
 ```
 
-To use the framework's development server directly, run `npm run dev`. This direct mode requires `DATABASE_URL`.
+5. Create and apply a development migration:
+
+```bash
+npm run prisma:migrate -- --name init
+```
+
+## Useful commands
+
+```bash
+npm run dev
+npm run build
+npm run prisma:deploy
+npm run prisma:studio
+```
+
+The Prisma schema is located at `prisma/schema.prisma`. The application uses
+`@prisma/adapter-pg` to connect Prisma Client to PostgreSQL.
+# University-Management-System-

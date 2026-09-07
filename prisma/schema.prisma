@@ -1,0 +1,260 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  FACULTY
+  STUDENT
+}
+
+enum SemesterStatus {
+  UPCOMING
+  ONGOING
+  COMPLETED
+}
+
+enum EnrollmentStatus {
+  PENDING
+  ENROLLED
+  COMPLETED
+  DROPPED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+enum NoticeAudience {
+  ALL
+  STUDENT
+  FACULTY
+}
+
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  password      String?
+  googleId      String?        @unique
+  role          Role
+  isActive      Boolean        @default(true)
+  admin         Admin?
+  faculty       Faculty?
+  student       Student?
+  refreshTokens RefreshToken[]
+  notices       Notice[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([role])
+  @@index([isActive])
+  @@map("users")
+}
+
+model Admin {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  name      String
+  phone     String?
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("admins")
+}
+
+model Department {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  code      String    @unique
+  courses   Course[]
+  faculty   Faculty[]
+  students  Student[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("departments")
+}
+
+model Semester {
+  id                String           @id @default(uuid())
+  year              Int
+  code              String           @unique
+  startDate         DateTime
+  endDate           DateTime
+  status            SemesterStatus
+  offerings         CourseOffering[]
+  admissionStudents Student[]
+  payments          Payment[]
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([status])
+  @@map("semesters")
+}
+
+model Course {
+  id           String           @id @default(uuid())
+  courseCode   String           @unique
+  title        String
+  credits      Int
+  departmentId String
+  department   Department       @relation(fields: [departmentId], references: [id])
+  offerings    CourseOffering[]
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  @@index([departmentId])
+  @@map("courses")
+}
+
+model Faculty {
+  id           String           @id @default(uuid())
+  userId       String           @unique
+  facultyId    String           @unique
+  name         String
+  designation  String
+  phone        String?
+  departmentId String
+  user         User             @relation(fields: [userId], references: [id])
+  department   Department       @relation(fields: [departmentId], references: [id])
+  offerings    CourseOffering[]
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  @@index([userId])
+  @@index([departmentId])
+  @@map("faculties")
+}
+
+model Student {
+  id                  String       @id @default(uuid())
+  userId              String       @unique
+  studentId           String       @unique
+  name                String
+  phone               String?
+  dateOfBirth         DateTime
+  departmentId        String
+  admissionSemesterId String
+  user                User         @relation(fields: [userId], references: [id])
+  department          Department   @relation(fields: [departmentId], references: [id])
+  admissionSemester   Semester     @relation(fields: [admissionSemesterId], references: [id])
+  enrollments         Enrollment[]
+  payments            Payment[]
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  @@index([userId])
+  @@index([departmentId])
+  @@index([admissionSemesterId])
+  @@map("students")
+}
+
+model CourseOffering {
+  id          String       @id @default(uuid())
+  courseId    String
+  semesterId  String
+  facultyId   String
+  maxSeats    Int
+  course      Course       @relation(fields: [courseId], references: [id])
+  semester    Semester     @relation(fields: [semesterId], references: [id])
+  faculty     Faculty      @relation(fields: [facultyId], references: [id])
+  enrollments Enrollment[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@unique([courseId, semesterId, facultyId])
+  @@index([courseId])
+  @@index([semesterId])
+  @@index([facultyId])
+  @@map("course_offerings")
+}
+
+model Enrollment {
+  id               String           @id @default(uuid())
+  studentId        String
+  courseOfferingId String
+  status           EnrollmentStatus
+  student          Student          @relation(fields: [studentId], references: [id])
+  courseOffering   CourseOffering   @relation(fields: [courseOfferingId], references: [id])
+  result           Result?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@unique([studentId, courseOfferingId])
+  @@index([studentId])
+  @@index([courseOfferingId])
+  @@index([status])
+  @@map("enrollments")
+}
+
+model Result {
+  id           String     @id @default(uuid())
+  enrollmentId String     @unique
+  grade        String
+  gradePoint   Float
+  publishedAt  DateTime?
+  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([enrollmentId])
+  @@map("results")
+}
+
+model Payment {
+  id            String        @id @default(uuid())
+  studentId     String
+  semesterId    String
+  amount        Decimal       @db.Decimal(12, 2)
+  transactionId String        @unique
+  status        PaymentStatus
+  paymentMethod String
+  paidAt        DateTime?
+  student       Student       @relation(fields: [studentId], references: [id])
+  semester      Semester      @relation(fields: [semesterId], references: [id])
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([studentId])
+  @@index([semesterId])
+  @@index([status])
+  @@map("payments")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+model Notice {
+  id         String         @id @default(uuid())
+  title      String
+  content    String
+  audience   NoticeAudience
+  postedById String
+  postedBy   User           @relation(fields: [postedById], references: [id])
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  @@index([postedById])
+  @@index([audience])
+  @@map("notices")
+}
