@@ -1,6 +1,7 @@
 import { Router } from "express";
 import httpStatus from "http-status";
 import { prisma } from "../lib/prisma";
+import { AdminRouter } from "../module/admin/admin.router";
 import { AuthRouter } from "../module/auth/auth.router";
 import { CourseOfferingRouter } from "../module/course-offering/course-offering.router";
 import { CourseRouter } from "../module/course/course.router";
@@ -47,6 +48,7 @@ router.use("/enrollments", EnrollmentRouter);
 router.use("/results", ResultRouter);
 router.use("/notices", NoticeRouter);
 router.use("/payments", PaymentRouter);
+router.use("/admin", AdminRouter);
 
 // Remaining feature module routers are mounted here as they land.
 
