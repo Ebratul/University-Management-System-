@@ -34,7 +34,9 @@ export const cacheInvalidateByPrefix = async (
 ): Promise<void> => {
 	try {
 		const keys: string[] = [];
-		for await (const batch of redisClient.scanIterator({ MATCH: `${prefix}*` })) {
+		for await (const batch of redisClient.scanIterator({
+			MATCH: `${prefix}*`,
+		})) {
 			keys.push(...(Array.isArray(batch) ? batch : [batch]));
 		}
 		if (keys.length) {

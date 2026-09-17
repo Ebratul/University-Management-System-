@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
 import type { NextFunction, Request, Response } from "express";
 import httpStatus from "http-status";
-import { JsonWebTokenError, TokenExpiredError } from "jsonwebtoken";
+import jsonwebtoken from "jsonwebtoken";
 import { ZodError } from "zod";
 
 import config from "../config";
@@ -58,10 +58,10 @@ export const globalErrorHandler = (
 	} else if (err instanceof Prisma.PrismaClientUnknownRequestError) {
 		statusCode = httpStatus.INTERNAL_SERVER_ERROR;
 		message = "An unexpected database error occurred";
-	} else if (err instanceof TokenExpiredError) {
+	} else if (err instanceof jsonwebtoken.TokenExpiredError) {
 		statusCode = httpStatus.UNAUTHORIZED;
 		message = "Token has expired. Please log in again.";
-	} else if (err instanceof JsonWebTokenError) {
+	} else if (err instanceof jsonwebtoken.JsonWebTokenError) {
 		statusCode = httpStatus.UNAUTHORIZED;
 		message = "Invalid token. Please log in again.";
 	} else if (err instanceof Error) {

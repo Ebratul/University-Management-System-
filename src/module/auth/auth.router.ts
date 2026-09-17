@@ -1,33 +1,40 @@
-import { Role } from "@prisma/client";
 import { Router } from "express";
 
+import { authLimiter } from "../../middleware/rateLimiter";
 import { validateRequest } from "../../middleware/validateRequest";
-import { UserValidation } from "./auth.validataion";
-import { auth } from "../../middleware/checkAuth";
+import { AuthController } from "./auth.controller";
+import { AuthValidation } from "./auth.validation";
 
 const router = Router();
 
 router.post(
 	"/register",
-	validateRequest(UserValidation.PatientRegistrationZodSchema),
-);
-router.post("/verify-email", validateRequest(UserValidation.LoginZodSchema));
-router.post(
-	"/verify-email",
-	validateRequest(UserValidation.PatientEmailVerifyZodSchema),
-);
-router.post("/login", validateRequest(UserValidation.LoginZodSchema));
-router.get("/me", auth(Role.ADMIN, Role.FACULTY, Role.STUDENT));
-router.post("/refresh-token");
-router.post("/google");
-router.post(
-	"/forgot-password",
-	validateRequest(UserValidation.ForgotPasswordZodSchema),
+	authLimiter,
+	validateRequest(AuthValidation.RegisterZodSchema),
+	AuthController.register,
 );
 router.post(
-	"/reset-password",
-	validateRequest(UserValidation.ResetPasswordZodSchema),
+	"/login",
+	authLimiter,
+	validateRequest(AuthValidation.LoginZodSchema),
+	AuthController.login,
 );
-export const AuthRoutes = router;
+router.post(
+	"/refresh-token",
+	authLimiter,
+	validateRequest(AuthValidation.RefreshTokenZodSchema),
+	AuthController.refreshToken,
+);
+router.post(
+	"/logout",
+	validateRequest(AuthValidation.LogoutZodSchema),
+	AuthController.logout,
+);
+router.post(
+	"/google",
+	authLimiter,
+	validateRequest(AuthValidation.GoogleLoginZodSchema),
+	AuthController.googleLogin,
+);
 
 export const AuthRouter = router;

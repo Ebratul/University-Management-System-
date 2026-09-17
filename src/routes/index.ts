@@ -1,6 +1,8 @@
 import { Router } from "express";
 import httpStatus from "http-status";
 import { prisma } from "../lib/prisma";
+import { AuthRouter } from "../module/auth/auth.router";
+import { UserRoutes } from "../module/user/user.router";
 
 const router = Router();
 
@@ -23,6 +25,9 @@ router.get("/health", async (_req, res) => {
 	}
 });
 
-// Feature module routers are mounted here as they land, one per phase of the build.
+router.use("/auth", AuthRouter);
+router.use("/users", UserRoutes);
+
+// Remaining feature module routers are mounted here as they land.
 
 export const apiRouter = router;
