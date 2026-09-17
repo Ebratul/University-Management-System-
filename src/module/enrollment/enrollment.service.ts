@@ -156,7 +156,8 @@ const listEnrollments = async (
 		andConditions.push({ studentId: query.studentId });
 	}
 
-	if (query.status) andConditions.push({ status: query.status as EnrollmentStatus });
+	if (query.status)
+		andConditions.push({ status: query.status as EnrollmentStatus });
 	if (query.courseOfferingId)
 		andConditions.push({ courseOfferingId: query.courseOfferingId });
 

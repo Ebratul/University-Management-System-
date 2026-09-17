@@ -1,6 +1,7 @@
 import { Router } from "express";
 import httpStatus from "http-status";
 import { prisma } from "../lib/prisma";
+import { redisClient } from "../lib/redis";
 import { AdminRouter } from "../module/admin/admin.router";
 import { AuthRouter } from "../module/auth/auth.router";
 import { CourseOfferingRouter } from "../module/course-offering/course-offering.router";
@@ -18,22 +19,23 @@ import { UserRoutes } from "../module/user/user.router";
 const router = Router();
 
 router.get("/health", async (_req, res) => {
-	try {
-		await prisma.$queryRaw`SELECT 1`;
-		res.status(httpStatus.OK).json({
-			success: true,
-			statusCode: httpStatus.OK,
-			message: "API is healthy",
-			data: { database: "up", timestamp: new Date().toISOString() },
-		});
-	} catch {
-		res.status(httpStatus.SERVICE_UNAVAILABLE).json({
-			success: false,
-			statusCode: httpStatus.SERVICE_UNAVAILABLE,
-			message: "Database is unreachable",
-			errors: undefined,
-		});
-	}
+	const [dbResult, redisResult] = await Promise.allSettled([
+		prisma.$queryRaw`SELECT 1`,
+		redisClient.ping(),
+	]);
+
+	const database = dbResult.status === "fulfilled" ? "up" : "down";
+	const redis = redisResult.status === "fulfilled" ? "up" : "down";
+	const healthy = database === "up" && redis === "up";
+
+	res.status(healthy ? httpStatus.OK : httpStatus.SERVICE_UNAVAILABLE).json({
+		success: healthy,
+		statusCode: healthy ? httpStatus.OK : httpStatus.SERVICE_UNAVAILABLE,
+		message: healthy
+			? "API is healthy"
+			: "One or more dependencies are unreachable",
+		data: { database, redis, timestamp: new Date().toISOString() },
+	});
 });
 
 router.use("/auth", AuthRouter);
