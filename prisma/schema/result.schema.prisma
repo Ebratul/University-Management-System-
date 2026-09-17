@@ -1,0 +1,15 @@
+model Result {
+  id         String @id @default(uuid())
+  grade      String
+  gradePoint Float
+
+  enrollmentId String     @unique
+  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+
+  deletedAt   DateTime?
+  publishedAt DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([deletedAt])
+  @@map("results")
+}

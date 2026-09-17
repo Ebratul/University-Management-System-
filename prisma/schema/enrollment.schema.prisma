@@ -1,0 +1,22 @@
+model Enrollment {
+  id     String           @id @default(uuid())
+  status EnrollmentStatus @default(PENDING)
+
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id])
+
+  courseOfferingId String
+  courseOffering   CourseOffering @relation(fields: [courseOfferingId], references: [id])
+
+  result Result?
+
+  deletedAt  DateTime?
+  enrolledAt DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@unique([studentId, courseOfferingId])
+  @@index([courseOfferingId])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("enrollments")
+}

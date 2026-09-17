@@ -1,0 +1,27 @@
+model Student {
+  id          String    @id @default(uuid())
+  userId      String    @unique
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  studentId   String    @unique
+  name        String
+  phone       String?
+  dateOfBirth DateTime?
+
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id])
+
+  admissionSemesterId String
+  admissionSemester   Semester @relation(fields: [admissionSemesterId], references: [id])
+
+  enrollments Enrollment[]
+  payments    Payment[]
+
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([departmentId])
+  @@index([admissionSemesterId])
+  @@index([deletedAt])
+  @@map("students")
+}

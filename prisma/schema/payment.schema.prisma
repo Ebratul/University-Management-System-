@@ -1,0 +1,28 @@
+model Payment {
+  id               String        @id @default(uuid())
+  amount           Float
+  // bKash "paymentID" issued at create-payment time; used to execute/query the payment.
+  gatewayPaymentId String        @unique
+  // bKash "trxID" assigned only once the payment is successfully executed.
+  transactionId    String?       @unique
+  status           PaymentStatus @default(PENDING)
+  paymentMethod    String        @default("BKASH")
+  failureReason    String?
+
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id])
+
+  semesterId String
+  semester   Semester @relation(fields: [semesterId], references: [id])
+
+  deletedAt DateTime?
+  paidAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([studentId])
+  @@index([semesterId])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("payments")
+}

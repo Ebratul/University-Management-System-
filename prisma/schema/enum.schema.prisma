@@ -1,0 +1,30 @@
+enum Role {
+  ADMIN
+  FACULTY
+  STUDENT
+}
+
+enum SemesterStatus {
+  UPCOMING
+  ONGOING
+  COMPLETED
+}
+
+enum EnrollmentStatus {
+  PENDING
+  ENROLLED
+  COMPLETED
+  DROPPED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+enum NoticeAudience {
+  ALL
+  STUDENT
+  FACULTY
+}

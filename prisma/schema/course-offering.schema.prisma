@@ -1,0 +1,25 @@
+model CourseOffering {
+  id       String @id @default(uuid())
+  maxSeats Int    @default(40)
+
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id])
+
+  facultyId String
+  faculty   Faculty @relation(fields: [facultyId], references: [id])
+
+  semesterId String
+  semester   Semester @relation(fields: [semesterId], references: [id])
+
+  enrollments Enrollment[]
+
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@unique([courseId, semesterId, facultyId])
+  @@index([semesterId])
+  @@index([facultyId])
+  @@index([deletedAt])
+  @@map("course_offerings")
+}

@@ -1,0 +1,19 @@
+model Course {
+  id         String @id @default(uuid())
+  courseCode String @unique
+  title      String
+  credits    Int
+
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id])
+
+  offerings CourseOffering[]
+
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([departmentId])
+  @@index([deletedAt])
+  @@map("courses")
+}

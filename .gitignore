@@ -1,0 +1,26 @@
+node_modules/
+
+# Keep environment variables and secrets out of version control.
+.env
+.env.*
+!.env.example
+
+# Build output and generated artifacts.
+dist/
+generated/
+/generated/prisma/
+
+# Test, coverage, and runtime output.
+coverage/
+.nyc_output/
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Local editor and operating-system files.
+.DS_Store
+Thumbs.db
+.idea/

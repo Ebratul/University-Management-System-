@@ -1,0 +1,22 @@
+model Faculty {
+  id          String  @id @default(uuid())
+  userId      String  @unique
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  facultyId   String  @unique
+  name        String
+  designation String?
+  phone       String?
+
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id])
+
+  courseOfferings CourseOffering[]
+
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([departmentId])
+  @@index([deletedAt])
+  @@map("faculties")
+}
