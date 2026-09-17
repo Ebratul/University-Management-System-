@@ -6,6 +6,7 @@ export interface ICreateSemesterPayload {
 	startDate: Date;
 	endDate: Date;
 	status?: SemesterStatus;
+	feeAmount?: number;
 }
 
 export interface IUpdateSemesterPayload {
@@ -14,4 +15,5 @@ export interface IUpdateSemesterPayload {
 	startDate?: Date;
 	endDate?: Date;
 	status?: SemesterStatus;
+	feeAmount?: number;
 }

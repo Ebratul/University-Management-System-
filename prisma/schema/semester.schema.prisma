@@ -5,6 +5,10 @@ model Semester {
   startDate DateTime
   endDate   DateTime
   status    SemesterStatus @default(UPCOMING)
+  // Authoritative tuition fee for this semester. Payment amounts are always
+  // read from here server-side — never trusted from the client — so a
+  // student can't pay an arbitrary amount for their tuition.
+  feeAmount Float          @default(0)
 
   courseOfferings  CourseOffering[]
   paymentsForSem   Payment[]

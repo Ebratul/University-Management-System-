@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "semesters" ADD COLUMN     "feeAmount" DOUBLE PRECISION NOT NULL DEFAULT 0;
+

@@ -8,6 +8,7 @@ const CreateZodSchema = z
 		startDate: z.coerce.date(),
 		endDate: z.coerce.date(),
 		status: z.enum(SemesterStatus).optional(),
+		feeAmount: z.number().min(0).optional(),
 	})
 	.refine((data) => data.endDate > data.startDate, {
 		message: "endDate must be after startDate.",
@@ -20,6 +21,7 @@ const UpdateZodSchema = z.object({
 	startDate: z.coerce.date().optional(),
 	endDate: z.coerce.date().optional(),
 	status: z.enum(SemesterStatus).optional(),
+	feeAmount: z.number().min(0).optional(),
 });
 
 export const SemesterValidation = { CreateZodSchema, UpdateZodSchema };

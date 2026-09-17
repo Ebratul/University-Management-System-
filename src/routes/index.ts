@@ -8,6 +8,7 @@ import { DepartmentRouter } from "../module/department/department.router";
 import { EnrollmentRouter } from "../module/enrollment/enrollment.router";
 import { FacultyRouter } from "../module/faculty/faculty.router";
 import { NoticeRouter } from "../module/notice/notice.router";
+import { PaymentRouter } from "../module/payment/payment.router";
 import { ResultRouter } from "../module/result/result.router";
 import { SemesterRouter } from "../module/semester/semester.router";
 import { StudentRouter } from "../module/student/student.router";
@@ -45,6 +46,7 @@ router.use("/course-offerings", CourseOfferingRouter);
 router.use("/enrollments", EnrollmentRouter);
 router.use("/results", ResultRouter);
 router.use("/notices", NoticeRouter);
+router.use("/payments", PaymentRouter);
 
 // Remaining feature module routers are mounted here as they land.
 
