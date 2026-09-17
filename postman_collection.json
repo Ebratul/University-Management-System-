@@ -1,0 +1,2805 @@
+{
+	"info": {
+		"name": "University Management System API",
+		"description": "Full API collection for the University Management System backend. Run 'Login as Admin/Faculty/Student' requests first (they auto-save tokens as collection variables via a test script), then run the rest top to bottom — creates in one folder save an id used by later folders (Departments -> Faculties/Students/Courses -> Course Offerings -> Enrollments -> Results). All list endpoints support page/limit/sortBy/sortOrder; most also support searchTerm and resource-specific filters.\n\nEvery Delete request has been moved into the final 'Cleanup' folder, in an order that actually satisfies each resource's dependent-check (e.g. the course offering is deleted before the faculty/course it references, so those deletes don't 409). Run the whole collection with Postman's Collection Runner (or `newman run`) and it should complete end to end, including Cleanup.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5000/api/v1"
+		},
+		{
+			"key": "adminToken",
+			"value": ""
+		},
+		{
+			"key": "adminRefreshToken",
+			"value": ""
+		},
+		{
+			"key": "facultyToken",
+			"value": ""
+		},
+		{
+			"key": "studentToken",
+			"value": ""
+		},
+		{
+			"key": "superAdminEmail",
+			"value": "superadmin@university.local"
+		},
+		{
+			"key": "superAdminPassword",
+			"value": ""
+		},
+		{
+			"key": "facultyEmail",
+			"value": "tester.faculty@university.local"
+		},
+		{
+			"key": "facultyPassword",
+			"value": ""
+		},
+		{
+			"key": "studentEmail",
+			"value": "tester.student@university.local"
+		},
+		{
+			"key": "studentPassword",
+			"value": ""
+		},
+		{
+			"key": "departmentId",
+			"value": ""
+		},
+		{
+			"key": "semesterId",
+			"value": ""
+		},
+		{
+			"key": "facultyId",
+			"value": ""
+		},
+		{
+			"key": "newFacultyEmail",
+			"value": ""
+		},
+		{
+			"key": "studentId",
+			"value": ""
+		},
+		{
+			"key": "courseId",
+			"value": ""
+		},
+		{
+			"key": "courseOfferingId",
+			"value": ""
+		},
+		{
+			"key": "enrollmentId",
+			"value": ""
+		},
+		{
+			"key": "resultId",
+			"value": ""
+		},
+		{
+			"key": "noticeId",
+			"value": ""
+		},
+		{
+			"key": "paymentId",
+			"value": ""
+		},
+		{
+			"key": "bkashPaymentId",
+			"value": ""
+		},
+		{
+			"key": "userId",
+			"value": ""
+		}
+	],
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Register (student self-signup)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "noauth"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"register"
+							]
+						},
+						"description": "Public. Always creates a STUDENT account. Run this after Departments/Semesters have created real ids, or fill departmentId/admissionSemesterId in manually.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Ada Lovelace\",\n  \"email\": \"ada.lovelace.{{$timestamp}}@example.com\",\n  \"password\": \"Password1!\",\n  \"phone\": \"01700000000\",\n  \"departmentId\": \"{{departmentId}}\",\n  \"admissionSemesterId\": \"{{semesterId}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "Login as Admin",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "noauth"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Public. Also sets accessToken/refreshToken cookies.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{superAdminEmail}}\",\n  \"password\": \"{{superAdminPassword}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200) { const d = pm.response.json().data; pm.collectionVariables.set('adminToken', d.accessToken); pm.collectionVariables.set('adminRefreshToken', d.refreshToken); }"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Login as Faculty",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "noauth"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Public.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{facultyEmail}}\",\n  \"password\": \"{{facultyPassword}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200) { const d = pm.response.json().data; pm.collectionVariables.set('facultyToken', d.accessToken); }"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Login as Student",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "noauth"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Public.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{studentEmail}}\",\n  \"password\": \"{{studentPassword}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200) { const d = pm.response.json().data; pm.collectionVariables.set('studentToken', d.accessToken); }"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Refresh token",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "noauth"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/refresh-token",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"refresh-token"
+							]
+						},
+						"description": "Public, but requires a valid refresh token (cookie or body). Rotates it: the old token is revoked.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"refreshToken\": \"{{adminRefreshToken}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "noauth"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/logout",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"logout"
+							]
+						},
+						"description": "Revokes the refresh token and clears auth cookies.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"refreshToken\": \"{{adminRefreshToken}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "Login with Google",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "noauth"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/google",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"google"
+							]
+						},
+						"description": "Public. Only logs in an EXISTING account matched by email — does not self-register (a Google signup has no department/semester to attach).\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idToken\": \"<google-id-token>\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Users",
+			"item": [
+				{
+					"name": "Get my profile",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/me",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								"me"
+							]
+						},
+						"description": "Any authenticated role.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }."
+					}
+				},
+				{
+					"name": "Update my profile",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/me",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								"me"
+							]
+						},
+						"description": "Any authenticated role. Updates the role-specific profile row (admin/faculty/student).\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"New Name\",\n  \"phone\": \"01711111111\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "Upload profile image",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/profile-image",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								"profile-image"
+							]
+						},
+						"description": "multipart/form-data with a `profileImage` file field. Not representable as a JSON body here — set the body type to form-data in Postman.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }."
+					}
+				},
+				{
+					"name": "List users (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users?page=1&limit=10&role=STUDENT&searchTerm=&sortBy=createdAt&sortOrder=desc",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "role",
+									"value": "STUDENT"
+								},
+								{
+									"key": "searchTerm",
+									"value": ""
+								},
+								{
+									"key": "sortBy",
+									"value": "createdAt"
+								},
+								{
+									"key": "sortOrder",
+									"value": "desc"
+								}
+							]
+						},
+						"description": "Admin only. Search matches email and the linked profile name.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }."
+					}
+				},
+				{
+					"name": "Create an Admin account",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users"
+							]
+						},
+						"description": "Admin only — the one role with no dedicated resource module to create it through.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Second Admin\",\n  \"email\": \"second.admin.{{$timestamp}}@example.com\",\n  \"password\": \"Password1!\",\n  \"phone\": \"01722222222\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) pm.collectionVariables.set('userId', pm.response.json().data.id);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get user by id (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								"{{userId}}"
+							]
+						},
+						"description": "Admin only.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }."
+					}
+				},
+				{
+					"name": "Change user role (Admin)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId}}/role",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								"{{userId}}",
+								"role"
+							]
+						},
+						"description": "Admin only. Only switches to a role the user already has a matching profile for — it never fabricates one, so this returns 400 for a fresh Admin-only account (expected). To see it succeed, target a user id that already has both an admin and a faculty/student profile.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"role\": \"FACULTY\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "Activate/deactivate user (Admin)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId}}/status",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								"{{userId}}",
+								"status"
+							]
+						},
+						"description": "Admin only.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"isActive\": false\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Departments",
+			"item": [
+				{
+					"name": "List departments",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "noauth"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/departments?page=1&limit=10&searchTerm=&sortBy=name&sortOrder=asc",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"departments"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "searchTerm",
+									"value": ""
+								},
+								{
+									"key": "sortBy",
+									"value": "name"
+								},
+								{
+									"key": "sortOrder",
+									"value": "asc"
+								}
+							]
+						},
+						"description": "Public.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }."
+					}
+				},
+				{
+					"name": "Create department (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/departments",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"departments"
+							]
+						},
+						"description": "Admin only. name/code include a timestamp so re-running this collection never 409s on a stale value from a previous run.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Electrical and Electronic Engineering {{$timestamp}}\",\n  \"code\": \"EEE{{$timestamp}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) pm.collectionVariables.set('departmentId', pm.response.json().data.id);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get department by id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "noauth"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/departments/{{departmentId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"departments",
+								"{{departmentId}}"
+							]
+						},
+						"description": "Public. Run 'Create department' first so departmentId is set.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }."
+					}
+				},
+				{
+					"name": "Update department (Admin)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/departments/{{departmentId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"departments",
+								"{{departmentId}}"
+							]
+						},
+						"description": "Admin only.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"CSE Department {{$timestamp}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Semesters",
+			"item": [
+				{
+					"name": "List semesters",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "noauth"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/semesters?page=1&limit=10&status=&searchTerm=",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"semesters"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "status",
+									"value": ""
+								},
+								{
+									"key": "searchTerm",
+									"value": ""
+								}
+							]
+						},
+						"description": "Public.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }."
+					}
+				},
+				{
+					"name": "Create semester (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/semesters",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"semesters"
+							]
+						},
+						"description": "Admin only. feeAmount is the authoritative tuition fee used by payment initiation.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"year\": 2027,\n  \"code\": \"FALL-{{$timestamp}}\",\n  \"startDate\": \"2027-09-01\",\n  \"endDate\": \"2027-12-31\",\n  \"status\": \"UPCOMING\",\n  \"feeAmount\": 5000\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) pm.collectionVariables.set('semesterId', pm.response.json().data.id);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get semester by id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "noauth"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/semesters/{{semesterId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"semesters",
+								"{{semesterId}}"
+							]
+						},
+						"description": "Public.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }."
+					}
+				},
+				{
+					"name": "Update semester (Admin)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/semesters/{{semesterId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"semesters",
+								"{{semesterId}}"
+							]
+						},
+						"description": "Admin only.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"ONGOING\",\n  \"feeAmount\": 5500\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Faculties",
+			"item": [
+				{
+					"name": "List faculties",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "noauth"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/faculties?page=1&limit=10&departmentId=&searchTerm=",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"faculties"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "departmentId",
+									"value": ""
+								},
+								{
+									"key": "searchTerm",
+									"value": ""
+								}
+							]
+						},
+						"description": "Public directory.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }."
+					}
+				},
+				{
+					"name": "Create faculty (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/faculties",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"faculties"
+							]
+						},
+						"description": "Admin only. Creates the User+Faculty pair together. Requires departmentId (run Departments -> Create department first).\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Dr. Grace Hopper\",\n  \"email\": \"grace.hopper.{{$timestamp}}@example.com\",\n  \"password\": \"Password1!\",\n  \"designation\": \"Professor\",\n  \"departmentId\": \"{{departmentId}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) { const d = pm.response.json().data; pm.collectionVariables.set('facultyId', d.id); pm.collectionVariables.set('newFacultyEmail', d.email); }"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Login as the newly created Faculty",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "noauth"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Overwrites facultyToken with THIS faculty's session (not the seeded tester.faculty), because Enrollments/Results below are scoped to whichever faculty actually teaches the course offering created later in this run.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{newFacultyEmail}}\",\n  \"password\": \"Password1!\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200) pm.collectionVariables.set('facultyToken', pm.response.json().data.accessToken);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get faculty by id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "noauth"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/faculties/{{facultyId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"faculties",
+								"{{facultyId}}"
+							]
+						},
+						"description": "Public.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }."
+					}
+				},
+				{
+					"name": "Update faculty (Admin)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/faculties/{{facultyId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"faculties",
+								"{{facultyId}}"
+							]
+						},
+						"description": "Admin only.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"designation\": \"Head of Department\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Students",
+			"item": [
+				{
+					"name": "List students (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/students?page=1&limit=10&departmentId=&admissionSemesterId=&searchTerm=",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"students"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "departmentId",
+									"value": ""
+								},
+								{
+									"key": "admissionSemesterId",
+									"value": ""
+								},
+								{
+									"key": "searchTerm",
+									"value": ""
+								}
+							]
+						},
+						"description": "Admin only (bulk PII).\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }."
+					}
+				},
+				{
+					"name": "Create student (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/students",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"students"
+							]
+						},
+						"description": "Admin only. Alternative to self-registration. Requires departmentId and semesterId (run Departments/Semesters -> Create first).\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Alan Turing\",\n  \"email\": \"alan.turing.{{$timestamp}}@example.com\",\n  \"password\": \"Password1!\",\n  \"departmentId\": \"{{departmentId}}\",\n  \"admissionSemesterId\": \"{{semesterId}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) pm.collectionVariables.set('studentId', pm.response.json().data.id);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get student by id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/students/{{studentId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"students",
+								"{{studentId}}"
+							]
+						},
+						"description": "Admin, the faculty teaching them, or the student themselves.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }."
+					}
+				},
+				{
+					"name": "Update student (Admin)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/students/{{studentId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"students",
+								"{{studentId}}"
+							]
+						},
+						"description": "Admin only.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"phone\": \"01733333333\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Courses",
+			"item": [
+				{
+					"name": "List courses",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "noauth"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/courses?page=1&limit=10&departmentId=&searchTerm=",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"courses"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "departmentId",
+									"value": ""
+								},
+								{
+									"key": "searchTerm",
+									"value": ""
+								}
+							]
+						},
+						"description": "Public catalog.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }."
+					}
+				},
+				{
+					"name": "Create course (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/courses",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"courses"
+							]
+						},
+						"description": "Admin only. Requires departmentId.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"courseCode\": \"CSE{{$timestamp}}\",\n  \"title\": \"Introduction to Programming\",\n  \"credits\": 3,\n  \"departmentId\": \"{{departmentId}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) pm.collectionVariables.set('courseId', pm.response.json().data.id);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get course by id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "noauth"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/courses/{{courseId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"courses",
+								"{{courseId}}"
+							]
+						},
+						"description": "Public.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }."
+					}
+				},
+				{
+					"name": "Update course (Admin)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/courses/{{courseId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"courses",
+								"{{courseId}}"
+							]
+						},
+						"description": "Admin only.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"credits\": 4\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Course Offerings",
+			"item": [
+				{
+					"name": "List course offerings",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "noauth"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/course-offerings?page=1&limit=10&semesterId=&courseId=&facultyId=",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"course-offerings"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "semesterId",
+									"value": ""
+								},
+								{
+									"key": "courseId",
+									"value": ""
+								},
+								{
+									"key": "facultyId",
+									"value": ""
+								}
+							]
+						},
+						"description": "Public. Includes a live-computed seatsRemaining.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }."
+					}
+				},
+				{
+					"name": "Create course offering (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/course-offerings",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"course-offerings"
+							]
+						},
+						"description": "Admin only. Requires courseId, facultyId, semesterId from the folders above.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"courseId\": \"{{courseId}}\",\n  \"facultyId\": \"{{facultyId}}\",\n  \"semesterId\": \"{{semesterId}}\",\n  \"maxSeats\": 40\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) pm.collectionVariables.set('courseOfferingId', pm.response.json().data.id);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get course offering by id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "noauth"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/course-offerings/{{courseOfferingId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"course-offerings",
+								"{{courseOfferingId}}"
+							]
+						},
+						"description": "Public.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }."
+					}
+				},
+				{
+					"name": "Update course offering (Admin)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/course-offerings/{{courseOfferingId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"course-offerings",
+								"{{courseOfferingId}}"
+							]
+						},
+						"description": "Admin only.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"maxSeats\": 50\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "Assign faculty (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/course-offerings/{{courseOfferingId}}/assign-faculty",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"course-offerings",
+								"{{courseOfferingId}}",
+								"assign-faculty"
+							]
+						},
+						"description": "Admin only.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"facultyId\": \"{{facultyId}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Enrollments",
+			"item": [
+				{
+					"name": "List enrollments",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{studentToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/enrollments?page=1&limit=10&status=&studentId=&courseOfferingId=",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"enrollments"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "status",
+									"value": ""
+								},
+								{
+									"key": "studentId",
+									"value": ""
+								},
+								{
+									"key": "courseOfferingId",
+									"value": ""
+								}
+							]
+						},
+						"description": "Admin sees all; Faculty is scoped to offerings they teach; Student is scoped to themselves.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }."
+					}
+				},
+				{
+					"name": "Enroll (Student)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{studentToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/enrollments",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"enrollments"
+							]
+						},
+						"description": "Student only. Requires courseOfferingId. Seat-limit check runs inside a Serializable transaction — returns 409 if the offering is full.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"courseOfferingId\": \"{{courseOfferingId}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) pm.collectionVariables.set('enrollmentId', pm.response.json().data.id);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get enrollment by id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{studentToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/enrollments/{{enrollmentId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"enrollments",
+								"{{enrollmentId}}"
+							]
+						},
+						"description": "Same scoping as the list endpoint.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }."
+					}
+				},
+				{
+					"name": "Update enrollment status (Admin/Faculty)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{facultyToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/enrollments/{{enrollmentId}}/status",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"enrollments",
+								"{{enrollmentId}}",
+								"status"
+							]
+						},
+						"description": "Admin, or the Faculty teaching that offering. Re-checks the seat limit when moving into an active status.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"ENROLLED\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Results",
+			"item": [
+				{
+					"name": "List results",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{studentToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/results?page=1&limit=10&studentId=&semesterId=&courseOfferingId=",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"results"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "studentId",
+									"value": ""
+								},
+								{
+									"key": "semesterId",
+									"value": ""
+								},
+								{
+									"key": "courseOfferingId",
+									"value": ""
+								}
+							]
+						},
+						"description": "Admin sees all; Faculty is scoped to their offerings; Student sees only their own.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }."
+					}
+				},
+				{
+					"name": "Publish result (Admin/Faculty)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{facultyToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/results",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"results"
+							]
+						},
+						"description": "Requires enrollmentId. Also transitions the enrollment to COMPLETED.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"enrollmentId\": \"{{enrollmentId}}\",\n  \"grade\": \"A\",\n  \"gradePoint\": 4\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) pm.collectionVariables.set('resultId', pm.response.json().data.id);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get result by id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{studentToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/results/{{resultId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"results",
+								"{{resultId}}"
+							]
+						},
+						"description": "Same scoping as the list endpoint.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }."
+					}
+				},
+				{
+					"name": "Update result (Admin/Faculty)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{facultyToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/results/{{resultId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"results",
+								"{{resultId}}"
+							]
+						},
+						"description": "Admin, or the Faculty who teaches that offering.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"grade\": \"A-\",\n  \"gradePoint\": 3.7\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Notices",
+			"item": [
+				{
+					"name": "List notices",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "noauth"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/notices?page=1&limit=10&searchTerm=",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"notices"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "searchTerm",
+									"value": ""
+								}
+							]
+						},
+						"description": "Public. Filtered by audience: ALL only when logged out; + STUDENT/FACULTY when logged in as that role; Admin sees everything. Attach a Bearer token to see the personalized view.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }."
+					}
+				},
+				{
+					"name": "Create notice (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/notices",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"notices"
+							]
+						},
+						"description": "Admin only. audience defaults to ALL.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Midterm Schedule Released\",\n  \"content\": \"Check the portal for your midterm exam schedule.\",\n  \"audience\": \"STUDENT\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) pm.collectionVariables.set('noticeId', pm.response.json().data.id);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get notice by id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/notices/{{noticeId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"notices",
+								"{{noticeId}}"
+							]
+						},
+						"description": "Same audience filtering as the list endpoint — using Admin here so this reliably returns the notice regardless of its audience. Remove the auth header to see the anonymous (ALL-only) view 404 on a non-ALL notice.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }."
+					}
+				},
+				{
+					"name": "Update notice (Admin)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/notices/{{noticeId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"notices",
+								"{{noticeId}}"
+							]
+						},
+						"description": "Admin only.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Midterm Schedule Released (Updated)\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Payments",
+			"item": [
+				{
+					"name": "Initiate payment (Student)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{studentToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/payments/initiate",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"payments",
+								"initiate"
+							]
+						},
+						"description": "Student only. Requires semesterId with a feeAmount > 0 set (see Semesters -> Update semester). Amount is always the semester's server-set feeAmount, never trusted from the client. Returns a bkashURL to redirect the payer to. Requires real bKash sandbox credentials in .env — fails with a clean 502/503 otherwise.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"semesterId\": \"{{semesterId}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) { const d = pm.response.json().data; pm.collectionVariables.set('paymentId', d.payment.id); pm.collectionVariables.set('bkashPaymentId', d.payment.gatewayPaymentId); }"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Payment callback (bKash redirect)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "noauth"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/payments/callback?paymentID={{bkashPaymentId}}&status=success",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"payments",
+								"callback"
+							],
+							"query": [
+								{
+									"key": "paymentID",
+									"value": "{{bkashPaymentId}}"
+								},
+								{
+									"key": "status",
+									"value": "success"
+								}
+							]
+						},
+						"description": "Public, rate-limited. This is where bKash redirects the payer's browser after checkout — you won't normally call it directly. Idempotent: a repeat call for an already-settled payment is a no-op.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }."
+					}
+				},
+				{
+					"name": "List payments",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{studentToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/payments?page=1&limit=10&status=&semesterId=&studentId=",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"payments"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "status",
+									"value": ""
+								},
+								{
+									"key": "semesterId",
+									"value": ""
+								},
+								{
+									"key": "studentId",
+									"value": ""
+								}
+							]
+						},
+						"description": "Admin sees all + filters; Student sees only their own.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }."
+					}
+				},
+				{
+					"name": "Get payment by id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{studentToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/payments/{{paymentId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"payments",
+								"{{paymentId}}"
+							]
+						},
+						"description": "Admin, or the Student who owns it.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }."
+					}
+				}
+			]
+		},
+		{
+			"name": "Admin",
+			"item": [
+				{
+					"name": "List audit logs (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/audit-logs?page=1&limit=20&action=&entityType=&entityId=&performedByUserId=&from=&to=",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"admin",
+								"audit-logs"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								},
+								{
+									"key": "action",
+									"value": ""
+								},
+								{
+									"key": "entityType",
+									"value": ""
+								},
+								{
+									"key": "entityId",
+									"value": ""
+								},
+								{
+									"key": "performedByUserId",
+									"value": ""
+								},
+								{
+									"key": "from",
+									"value": ""
+								},
+								{
+									"key": "to",
+									"value": ""
+								}
+							]
+						},
+						"description": "Admin only. Every mutating endpoint in this collection writes one of these.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }."
+					}
+				},
+				{
+					"name": "Dashboard stats (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/dashboard/stats",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"admin",
+								"dashboard",
+								"stats"
+							]
+						},
+						"description": "Admin only. Redis-cached for 60s.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }."
+					}
+				}
+			]
+		},
+		{
+			"name": "Misc",
+			"item": [
+				{
+					"name": "Health check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "noauth"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/health",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"health"
+							]
+						},
+						"description": "Public. Checks DB connectivity.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }."
+					}
+				}
+			]
+		},
+		{
+			"name": "Cleanup (optional — run last, in this order)",
+			"item": [
+				{
+					"name": "Delete course offering (Admin)",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/course-offerings/{{courseOfferingId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"course-offerings",
+								"{{courseOfferingId}}"
+							]
+						},
+						"description": "Admin only. Blocked with 409 while it has active enrollments.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }."
+					}
+				},
+				{
+					"name": "Delete notice (Admin)",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/notices/{{noticeId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"notices",
+								"{{noticeId}}"
+							]
+						},
+						"description": "Admin only.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }."
+					}
+				},
+				{
+					"name": "Delete faculty (Admin)",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/faculties/{{facultyId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"faculties",
+								"{{facultyId}}"
+							]
+						},
+						"description": "Admin only. Blocked with 409 while they have active course offerings.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }."
+					}
+				},
+				{
+					"name": "Delete student (Admin)",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/students/{{studentId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"students",
+								"{{studentId}}"
+							]
+						},
+						"description": "Admin only. Blocked with 409 while they have active (PENDING/ENROLLED) enrollments.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }."
+					}
+				},
+				{
+					"name": "Delete course (Admin)",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/courses/{{courseId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"courses",
+								"{{courseId}}"
+							]
+						},
+						"description": "Admin only. Blocked with 409 while it has active offerings.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }."
+					}
+				},
+				{
+					"name": "Delete semester (Admin)",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/semesters/{{semesterId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"semesters",
+								"{{semesterId}}"
+							]
+						},
+						"description": "Admin only. Blocked with 409 while it has offerings, admitted students, or payments.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }."
+					}
+				},
+				{
+					"name": "Delete department (Admin)",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/departments/{{departmentId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"departments",
+								"{{departmentId}}"
+							]
+						},
+						"description": "Admin only. Blocked with 409 while it has active faculty, courses, or students.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }."
+					}
+				},
+				{
+					"name": "Delete user (Admin, soft delete)",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								"{{userId}}"
+							]
+						},
+						"description": "Admin only. Soft-deletes the user and cascades onto whichever profile row exists.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }."
+					}
+				}
+			]
+		}
+	]
+}
