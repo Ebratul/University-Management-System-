@@ -5,6 +5,7 @@ import type { UploadApiResponse } from "cloudinary";
 import httpStatus from "http-status";
 
 import config from "../../config";
+import type { IActor } from "../../interface";
 import { cloudinary } from "../../lib/cloudinary";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utils/AppError";
@@ -133,11 +134,7 @@ const getUserById = async (id: string) => {
 	return user;
 };
 
-const changeRole = async (
-	id: string,
-	nextRole: Role,
-	actor: { userId: string; email: string; role: Role },
-) => {
+const changeRole = async (id: string, nextRole: Role, actor: IActor) => {
 	const user = await prisma.user.findFirst({
 		where: { id, deletedAt: null },
 		include: PROFILE_SELECT,
@@ -186,11 +183,7 @@ const changeRole = async (
 	return updated;
 };
 
-const changeStatus = async (
-	id: string,
-	isActive: boolean,
-	actor: { userId: string; email: string; role: Role },
-) => {
+const changeStatus = async (id: string, isActive: boolean, actor: IActor) => {
 	const user = await prisma.user.findFirst({ where: { id, deletedAt: null } });
 	if (!user) {
 		throw new AppError(httpStatus.NOT_FOUND, "User not found.");
@@ -212,10 +205,7 @@ const changeStatus = async (
 	return updated;
 };
 
-const softDeleteUser = async (
-	id: string,
-	actor: { userId: string; email: string; role: Role },
-) => {
+const softDeleteUser = async (id: string, actor: IActor) => {
 	const user = await prisma.user.findFirst({ where: { id, deletedAt: null } });
 	if (!user) {
 		throw new AppError(httpStatus.NOT_FOUND, "User not found.");
@@ -250,10 +240,7 @@ const softDeleteUser = async (
 	});
 };
 
-const createAdmin = async (
-	payload: ICreateAdminPayload,
-	actor: { userId: string; email: string; role: Role },
-) => {
+const createAdmin = async (payload: ICreateAdminPayload, actor: IActor) => {
 	const email = payload.email.trim().toLowerCase();
 
 	const existing = await prisma.user.findUnique({ where: { email } });

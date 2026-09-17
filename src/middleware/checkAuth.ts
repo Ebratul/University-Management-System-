@@ -35,6 +35,38 @@ const extractToken = (req: Request): string | undefined => {
 	return header.startsWith("Bearer ") ? header.slice(7) : header;
 };
 
+const resolveUser = async (token: string): Promise<RequestUser | null> => {
+	const verifiedToken = jwtUtils.verifyToken(token, config.jwt_access_secret);
+	if (!verifiedToken.success || !verifiedToken.data) {
+		return null;
+	}
+
+	const { userId, name, role } = verifiedToken.data as JwtPayload & {
+		userId: string;
+		email: string;
+		name: string;
+		role: Role;
+	};
+
+	const user = await prisma.user.findUnique({
+		where: { id: userId },
+		select: {
+			id: true,
+			email: true,
+			role: true,
+			isActive: true,
+			deletedAt: true,
+		},
+	});
+
+	if (!user || user.deletedAt || !user.isActive) return null;
+	// The DB role is the source of truth: if an admin changed this user's role
+	// since the token was issued, the old token must stop granting the old role.
+	if (user.role !== role) return null;
+
+	return { userId: user.id, email: user.email, name, role: user.role };
+};
+
 // auth() with no roles just requires a valid, active session.
 // auth(Role.ADMIN, Role.FACULTY) restricts to those roles.
 export const auth = (...requiredRoles: Role[]) => {
@@ -49,56 +81,11 @@ export const auth = (...requiredRoles: Role[]) => {
 				);
 			}
 
-			const verifiedToken = jwtUtils.verifyToken(
-				token,
-				config.jwt_access_secret,
-			);
-
-			if (!verifiedToken.success || !verifiedToken.data) {
+			const user = await resolveUser(token);
+			if (!user) {
 				throw new AppError(
 					httpStatus.UNAUTHORIZED,
-					"Invalid or expired access token.",
-				);
-			}
-
-			const { userId, name, role } = verifiedToken.data as JwtPayload & {
-				userId: string;
-				email: string;
-				name: string;
-				role: Role;
-			};
-
-			const user = await prisma.user.findUnique({
-				where: { id: userId },
-				select: {
-					id: true,
-					email: true,
-					role: true,
-					isActive: true,
-					deletedAt: true,
-				},
-			});
-
-			if (!user || user.deletedAt) {
-				throw new AppError(
-					httpStatus.UNAUTHORIZED,
-					"User not found. Please log in again.",
-				);
-			}
-
-			if (!user.isActive) {
-				throw new AppError(
-					httpStatus.FORBIDDEN,
-					"Your account has been deactivated. Please contact support.",
-				);
-			}
-
-			// The DB role is the source of truth: if an admin changed this user's role
-			// since the token was issued, the old token must stop granting the old role.
-			if (user.role !== role) {
-				throw new AppError(
-					httpStatus.UNAUTHORIZED,
-					"Your permissions have changed. Please log in again.",
+					"Invalid or expired session. Please log in again.",
 				);
 			}
 
@@ -109,14 +96,20 @@ export const auth = (...requiredRoles: Role[]) => {
 				);
 			}
 
-			req.user = {
-				userId: user.id,
-				email: user.email,
-				name,
-				role: user.role,
-			};
-
+			req.user = user;
 			next();
 		},
 	);
 };
+
+// For routes that are public but personalize their response when a valid
+// session is present (e.g. notices filtered by audience). Never rejects.
+export const optionalAuth = catchAsync(
+	async (req: Request, _res: Response, next: NextFunction) => {
+		const token = extractToken(req);
+		if (token) {
+			req.user = (await resolveUser(token)) ?? undefined;
+		}
+		next();
+	},
+);
