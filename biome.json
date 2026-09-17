@@ -31,7 +31,7 @@
         "useNodejsImportProtocol": "info"
       }
     },
-    "includes": ["**", "!dist", "!src/genrated", "!src/app/templates"]
+    "includes": ["**", "!dist", "!src/generated", "!src/app/templates"]
   },
   "javascript": {
     "formatter": {

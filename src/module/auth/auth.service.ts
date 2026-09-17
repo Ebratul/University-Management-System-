@@ -223,7 +223,7 @@ const refreshSession = async (token: string) => {
 	const user = await prisma.user.findFirst({
 		where: { id: payload.userId, deletedAt: null },
 	});
-	if (!user || !user.isActive) {
+	if (!user?.isActive) {
 		throw new AppError(
 			httpStatus.UNAUTHORIZED,
 			"User is inactive or not found.",

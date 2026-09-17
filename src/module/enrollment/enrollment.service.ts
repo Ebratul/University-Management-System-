@@ -1,5 +1,5 @@
 import { Role } from "@prisma/client";
-import type { Prisma } from "@prisma/client";
+import type { EnrollmentStatus, Prisma } from "@prisma/client";
 import httpStatus from "http-status";
 
 import type { IActor } from "../../interface";
@@ -156,7 +156,7 @@ const listEnrollments = async (
 		andConditions.push({ studentId: query.studentId });
 	}
 
-	if (query.status) andConditions.push({ status: query.status as never });
+	if (query.status) andConditions.push({ status: query.status as EnrollmentStatus });
 	if (query.courseOfferingId)
 		andConditions.push({ courseOfferingId: query.courseOfferingId });
 

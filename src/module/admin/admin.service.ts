@@ -1,4 +1,4 @@
-import { PaymentStatus, Prisma, Role } from "@prisma/client";
+import { PaymentStatus, type Prisma, Role } from "@prisma/client";
 
 import { prisma } from "../../lib/prisma";
 import { cacheGet, cacheSet } from "../../utils/cache";
