@@ -40,3 +40,17 @@ export const generalLimiter = rateLimit({
 	legacyHeaders: false,
 	handler: jsonLimitHandler("Too many requests. Please slow down."),
 });
+
+// Account-creation endpoints (admin/faculty/student signup) are a spam and
+// enumeration target — tighter than generalLimiter but looser than
+// authLimiter, since a busy admin genuinely may create several accounts
+// in a session.
+export const accountCreationLimiter = rateLimit({
+	windowMs: 15 * 60 * 1000,
+	limit: 30,
+	standardHeaders: true,
+	legacyHeaders: false,
+	handler: jsonLimitHandler(
+		"Too many account-creation requests. Please try again later.",
+	),
+});

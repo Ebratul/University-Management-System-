@@ -2,6 +2,7 @@ import { Role } from "@prisma/client";
 import { Router } from "express";
 
 import { auth } from "../../middleware/checkAuth";
+import { accountCreationLimiter } from "../../middleware/rateLimiter";
 import { validateRequest } from "../../middleware/validateRequest";
 import { FacultyController } from "./faculty.controller";
 import { FacultyValidation } from "./faculty.validation";
@@ -15,6 +16,7 @@ router.get("/:id", FacultyController.getFacultyById);
 router.post(
 	"/",
 	auth(Role.ADMIN),
+	accountCreationLimiter,
 	validateRequest(FacultyValidation.CreateZodSchema),
 	FacultyController.createFaculty,
 );

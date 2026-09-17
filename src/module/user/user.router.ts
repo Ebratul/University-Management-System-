@@ -3,6 +3,7 @@ import { Router } from "express";
 
 import upload from "../../lib/multer";
 import { auth } from "../../middleware/checkAuth";
+import { accountCreationLimiter } from "../../middleware/rateLimiter";
 import { validateRequest } from "../../middleware/validateRequest";
 import { UserController } from "./user.controller";
 import { UserValidation } from "./user.validation";
@@ -27,6 +28,7 @@ router.get("/", auth(Role.ADMIN), UserController.listUsers);
 router.post(
 	"/",
 	auth(Role.ADMIN),
+	accountCreationLimiter,
 	validateRequest(UserValidation.CreateAdminZodSchema),
 	UserController.createAdmin,
 );

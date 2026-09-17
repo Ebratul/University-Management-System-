@@ -2,6 +2,7 @@ import { Role } from "@prisma/client";
 import { Router } from "express";
 
 import { auth } from "../../middleware/checkAuth";
+import { accountCreationLimiter } from "../../middleware/rateLimiter";
 import { validateRequest } from "../../middleware/validateRequest";
 import { StudentController } from "./student.controller";
 import { StudentValidation } from "./student.validation";
@@ -20,6 +21,7 @@ router.get(
 router.post(
 	"/",
 	auth(Role.ADMIN),
+	accountCreationLimiter,
 	validateRequest(StudentValidation.CreateZodSchema),
 	StudentController.createStudent,
 );
