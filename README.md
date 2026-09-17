@@ -30,8 +30,66 @@ Other useful scripts:
 | `npm start` | Run the compiled build (`dist/src/server.js`) |
 | `npm run migrate:deploy` | Apply pending Prisma migrations (`prisma migrate deploy`) |
 | `npm run seed` | Run `prisma/../src/utils/seed.ts` (idempotent — safe to re-run) |
+| `npm run typecheck` | `tsc --noEmit` |
+| `npm test` | Run the test suite (`tsx --test`, auto-discovers `*.test.ts`) |
 | `npm run lint:check` / `lint:fix` | Biome lint |
 | `npm run format:check` / `format:fix` | Biome format |
+
+### Docker (local dev)
+
+```bash
+docker compose up
+```
+
+Starts Postgres, Redis, and the app (hot-reloading via `tsx watch`, with
+`src/` and `prisma/` mounted) in one command — no need to install Postgres
+or Redis natively. Copy `.env.example` to `.env` first; `docker-compose.yml`
+overrides `DATABASE_URL`/`REDIS_HOST`/`REDIS_PORT` to point at the compose
+network's own Postgres/Redis, but every other variable (JWT secrets, bKash,
+Cloudinary, seed accounts) still comes from your `.env`.
+
+## CI
+
+`.github/workflows/ci.yml` runs on every push and PR: Biome format/lint
+check, `tsc --noEmit`, `prisma generate`, `prisma migrate deploy` against a
+real Postgres service container, `npm run build`, and the full test suite
+(including the integration test, against that same throwaway database).
+
+## Deployment
+
+`Dockerfile` builds a lean multi-stage production image (see
+[Architecture](#architecture) below) and `render.yaml` is a ready-to-use
+[Render](https://render.com) blueprint provisioning Postgres, Redis, and the
+API as a Docker web service. To deploy:
+
+1. Push this repo to GitHub.
+2. In Render, **New +** → **Blueprint**, point it at the repo — it reads
+   `render.yaml` and provisions the three services automatically.
+3. After the first deploy, open the web service's **Environment** tab and
+   set every variable `render.yaml` couldn't fill in automatically (it has
+   no safe default to infer): `CORS_ALLOWED_ORIGINS`, `JWT_ACCESS_SECRET`,
+   `JWT_REFRESH_SECRET`, `JWT_ACCESS_EXPIRES_IN`, `JWT_REFRESH_EXPIRES_IN`,
+   `BCRYPT_SALT_ROUNDS`, `GOOGLE_CLIENT_ID`, the `BKASH_*` vars, the
+   `CLOUDINARY_*` vars, and the `SUPER_ADMIN_*`/`TESTER_*` seed vars —
+   the same list as `.env.example`, minus `DATABASE_URL`/`REDIS_HOST`/
+   `REDIS_PORT`, which the blueprint wires up for you.
+4. Redeploy, then run migrations and the seed once against the live
+   database — either via Render's **Shell** tab on the web service, or
+   locally with `DATABASE_URL` pointed at the deployed database:
+   `npm run migrate:deploy && npm run seed`.
+5. `BKASH_CALLBACK_URL` needs the deployed URL, e.g.
+   `https://university-api.onrender.com/api/v1/payments/callback` — set it
+   after step 2 gives you that URL, then redeploy.
+
+Any other Docker-friendly host (Fly.io, Railway, a VPS) works the same way:
+build `Dockerfile`'s `production` target, provide Postgres + Redis, set the
+same environment variables, run migrations once.
+
+This project's own `render.yaml`/deployment wasn't actually deployed from
+this environment — that needs your own Render account and explicit
+go-ahead, since it's an external, hard-to-reverse action (provisions real
+infrastructure, likely incurs cost beyond a free tier). The steps above are
+what you'd run yourself.
 
 ## Environment variables
 

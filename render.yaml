@@ -1,0 +1,43 @@
+databases:
+  - name: university-postgres
+    plan: free
+    databaseName: university
+    user: university
+
+services:
+  - type: redis
+    name: university-redis
+    plan: free
+    ipAllowList: []
+
+  - type: web
+    name: university-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: university-postgres
+          property: connectionString
+      - key: REDIS_HOST
+        fromService:
+          name: university-redis
+          type: redis
+          property: host
+      - key: REDIS_PORT
+        fromService:
+          name: university-redis
+          type: redis
+          property: port
+      # Everything below has no safe default and must be set manually in
+      # the Render dashboard after the first deploy (Settings -> Environment):
+      # CORS_ALLOWED_ORIGINS, JWT_ACCESS_SECRET, JWT_REFRESH_SECRET,
+      # JWT_ACCESS_EXPIRES_IN, JWT_REFRESH_EXPIRES_IN, BCRYPT_SALT_ROUNDS,
+      # GOOGLE_CLIENT_ID, BKASH_*, CLOUDINARY_*, SUPER_ADMIN_*, TESTER_*.
