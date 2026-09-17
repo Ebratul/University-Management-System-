@@ -1,6 +1,7 @@
 import type { Server } from "node:http";
 import app from "./app";
 import config from "./config";
+import { validateEnv } from "./config/validateEnv";
 import { prisma } from "./lib/prisma";
 import { redisClient } from "./lib/redis";
 
@@ -20,6 +21,8 @@ const shutdown = async (signal: string) => {
 
 const main = async () => {
 	try {
+		validateEnv();
+
 		await prisma.$connect();
 		console.log("Database connected successfully.");
 
@@ -41,6 +44,11 @@ process.on("SIGTERM", () => shutdown("SIGTERM"));
 
 process.on("unhandledRejection", (reason) => {
 	console.error("Unhandled promise rejection:", reason);
+	server?.close(() => process.exit(1));
+});
+
+process.on("uncaughtException", (error) => {
+	console.error("Uncaught exception:", error);
 	server?.close(() => process.exit(1));
 });
 

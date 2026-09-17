@@ -1,3 +1,4 @@
+import compression from "compression";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express, {
@@ -10,12 +11,17 @@ import httpStatus from "http-status";
 
 import config from "./config";
 import { globalErrorHandler } from "./middleware/globalErrorHandler";
+import { notFound } from "./middleware/notFound";
 import { generalLimiter } from "./middleware/rateLimiter";
 import { requestLogger } from "./middleware/requestLogger";
-import { notFound } from "./middleware/notFound";
 import { apiRouter } from "./routes";
 
 const app: Application = express();
+
+// Correct req.ip (used by rate limiting and audit-log IP capture) behind a
+// reverse proxy/load balancer — without this every request looks like it
+// comes from the proxy's own address in production.
+app.set("trust proxy", 1);
 
 app.use(helmet());
 app.use(
@@ -30,6 +36,7 @@ app.use(
 		credentials: true,
 	}),
 );
+app.use(compression());
 app.use(express.json({ limit: "10kb" }));
 app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 app.use(cookieParser());

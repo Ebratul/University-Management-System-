@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import type { NextFunction, Request, Response } from "express";
 import httpStatus from "http-status";
 import jsonwebtoken from "jsonwebtoken";
+import { MulterError } from "multer";
 import { ZodError } from "zod";
 
 import config from "../config";
@@ -64,6 +65,12 @@ export const globalErrorHandler = (
 	} else if (err instanceof jsonwebtoken.JsonWebTokenError) {
 		statusCode = httpStatus.UNAUTHORIZED;
 		message = "Invalid token. Please log in again.";
+	} else if (err instanceof MulterError) {
+		statusCode = httpStatus.BAD_REQUEST;
+		message =
+			err.code === "LIMIT_FILE_SIZE"
+				? "File is too large. Maximum size is 5MB."
+				: err.message;
 	} else if (err instanceof Error) {
 		message = config.node_env === "development" ? err.message : message;
 	}
