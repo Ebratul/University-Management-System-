@@ -208,13 +208,17 @@ export const seedAll = async () => {
 	await seedTesterStudent();
 };
 
-seedAll()
-	.then(async () => {
-		console.log("Database seeding completed successfully");
-		await prisma.$disconnect();
-	})
-	.catch(async (error: unknown) => {
-		console.error("Database seeding failed:", error);
-		await prisma.$disconnect();
-		process.exitCode = 1;
-	});
+// Only when run as a script (`npm run seed`). server.ts imports seedAll for
+// boot-time seeding, and importing must not seed or disconnect Prisma.
+if (import.meta.main) {
+	seedAll()
+		.then(async () => {
+			console.log("Database seeding completed successfully");
+			await prisma.$disconnect();
+		})
+		.catch(async (error: unknown) => {
+			console.error("Database seeding failed:", error);
+			await prisma.$disconnect();
+			process.exitCode = 1;
+		});
+}

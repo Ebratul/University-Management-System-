@@ -4,6 +4,7 @@ import config from "./config";
 import { validateEnv } from "./config/validateEnv";
 import { prisma } from "./lib/prisma";
 import { redisClient } from "./lib/redis";
+import { seedAll } from "./utils/seed";
 
 const port = config.port;
 let server: Server;
@@ -25,6 +26,14 @@ const main = async () => {
 
 		await prisma.$connect();
 		console.log("Database connected successfully.");
+
+		// Demo accounts are a convenience, not a dependency: a missing seed env
+		// var or a seed error must not keep the API from starting.
+		try {
+			await seedAll();
+		} catch (err) {
+			console.error("Seeding failed, continuing without it:", err);
+		}
 
 		await redisClient.connect();
 		console.log("Redis connected successfully.");

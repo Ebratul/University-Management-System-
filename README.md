@@ -106,13 +106,15 @@ Nothing in that file is a real secret — copy it to `.env` and fill in your own
 | Redis | `REDIS_USER`, `REDIS_PASSWORD`, `REDIS_HOST`, `REDIS_PORT` | Used for caching (departments/courses/semesters/notices/dashboard stats) and bKash token caching. |
 | bKash | `BKASH_BASE_URL`, `BKASH_USERNAME`, `BKASH_PASSWORD`, `BKASH_APP_KEY`, `BKASH_APP_SECRET`, `BKASH_CALLBACK_URL` | Sandbox or production tokenized-checkout credentials. Payment endpoints return a clean 503 if these are unset. |
 | Cloudinary | `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | Used by `PATCH /users/profile-image`. |
-| Seed accounts | `SUPER_ADMIN_*`, `TESTER_ADMIN_*`, `TESTER_FACULTY_*`, `TESTER_STUDENT_*` | Only read by `npm run seed`, never by the running server. |
+| Seed accounts | `SUPER_ADMIN_*`, `TESTER_ADMIN_*`, `TESTER_FACULTY_*`, `TESTER_STUDENT_*` | Read by `npm run seed` and by the server at startup, which creates any missing account (idempotent). A seed error is logged but doesn't stop the server. |
 
 ## Demo credentials
 
 `npm run seed` creates four accounts from the `SUPER_ADMIN_*` / `TESTER_*` env
-vars above (idempotent — it skips any account that already exists). The
-**passwords are never committed** — they live only in your local `.env`.
+vars above (idempotent — it skips any account that already exists). The server
+runs the same seed on every startup, so a migrated database gets them without
+a separate step. The **passwords are never committed** — they live only in your
+local `.env`.
 After seeding, log in with:
 
 - `SUPER_ADMIN_EMAIL` — role `ADMIN`
@@ -130,9 +132,11 @@ it covers all 68 requests across 15 folders (14 resource folders + a final Clean
 the standard error shape noted on every request. To use it:
 
 1. Import the collection.
-2. Open the collection's **Variables** tab and fill in `superAdminPassword`,
-   `facultyPassword`, `studentPassword` from your local `.env` (left blank in
-   the file on purpose).
+2. Open the collection's **Variables** tab. Every variable ships with a demo
+   value; replace `superAdminPassword`, `facultyPassword` and `studentPassword`
+   (and the `*Email` variables if they differ) with the credentials of the
+   accounts seeded from your local `.env` — those real passwords are never
+   committed.
 3. Run the three **Auth → Login as …** requests first — each has a test
    script that saves the returned access token into a collection variable
    (`adminToken`, `facultyToken`, `studentToken`), which every other request

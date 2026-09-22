@@ -1,7 +1,7 @@
 {
 	"info": {
 		"name": "University Management System API",
-		"description": "Full API collection for the University Management System backend. Run 'Login as Admin/Faculty/Student' requests first (they auto-save tokens as collection variables via a test script), then run the rest top to bottom — creates in one folder save an id used by later folders (Departments -> Faculties/Students/Courses -> Course Offerings -> Enrollments -> Results). All list endpoints support page/limit/sortBy/sortOrder; most also support searchTerm and resource-specific filters.\n\nEvery Delete request has been moved into the final 'Cleanup' folder, in an order that actually satisfies each resource's dependent-check (e.g. the course offering is deleted before the faculty/course it references, so those deletes don't 409). Run the whole collection with Postman's Collection Runner (or `newman run`) and it should complete end to end, including Cleanup.",
+		"description": "Full API collection for the University Management System backend. Run 'Login as Admin/Faculty/Student' requests first (they auto-save tokens as collection variables via a test script), then run the rest top to bottom — creates in one folder save an id used by later folders (Departments -> Faculties/Students/Courses -> Course Offerings -> Enrollments -> Results). All list endpoints support page/limit/sortBy/sortOrder; most also support searchTerm and resource-specific filters.\n\nEvery Delete request has been moved into the final 'Cleanup' folder, in an order that actually satisfies each resource's dependent-check (e.g. the course offering is deleted before the faculty/course it references, so those deletes don't 409). Run the whole collection with Postman's Collection Runner (or `newman run`) and it should complete end to end, including Cleanup.\n\nDemo values: every collection variable is pre-filled (demo UUIDs, placeholder tokens, demo passwords for the seeded accounts) and every list filter carries an example value. The login and create requests overwrite the tokens and ids as the run progresses. Replace the demo passwords with the real ones from your `.env` if your seeded accounts use different ones. Filters that pin a list to one record (`...Id`) are pre-filled but unticked so the default lists stay populated; tick them to narrow a list.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"variable": [
@@ -11,19 +11,19 @@
 		},
 		{
 			"key": "adminToken",
-			"value": ""
+			"value": "demo-admin-access-token"
 		},
 		{
 			"key": "adminRefreshToken",
-			"value": ""
+			"value": "demo-admin-refresh-token"
 		},
 		{
 			"key": "facultyToken",
-			"value": ""
+			"value": "demo-faculty-access-token"
 		},
 		{
 			"key": "studentToken",
-			"value": ""
+			"value": "demo-student-access-token"
 		},
 		{
 			"key": "superAdminEmail",
@@ -31,7 +31,7 @@
 		},
 		{
 			"key": "superAdminPassword",
-			"value": ""
+			"value": "Admin@12345"
 		},
 		{
 			"key": "facultyEmail",
@@ -39,7 +39,7 @@
 		},
 		{
 			"key": "facultyPassword",
-			"value": ""
+			"value": "Faculty@12345"
 		},
 		{
 			"key": "studentEmail",
@@ -47,59 +47,59 @@
 		},
 		{
 			"key": "studentPassword",
-			"value": ""
+			"value": "Student@12345"
 		},
 		{
 			"key": "departmentId",
-			"value": ""
+			"value": "b92da5d0-8f2a-455d-9655-ced7c1779ca7"
 		},
 		{
 			"key": "semesterId",
-			"value": ""
+			"value": "5e8cfe6d-f0e9-4b32-88e8-959cc614a40b"
 		},
 		{
 			"key": "facultyId",
-			"value": ""
+			"value": "7e7e491e-a344-48e8-8f99-b9b0cb6b101f"
 		},
 		{
 			"key": "newFacultyEmail",
-			"value": ""
+			"value": "grace.hopper@example.com"
 		},
 		{
 			"key": "studentId",
-			"value": ""
+			"value": "b07ce07f-ebbd-4ed6-8b1e-9e9935fc3d88"
 		},
 		{
 			"key": "courseId",
-			"value": ""
+			"value": "7452bb93-127c-4f34-9421-b9ffb699b20c"
 		},
 		{
 			"key": "courseOfferingId",
-			"value": ""
+			"value": "84d2ea26-9e8f-439e-a812-2f136b4c2668"
 		},
 		{
 			"key": "enrollmentId",
-			"value": ""
+			"value": "5ae4fd2d-145f-40ca-9155-12a48fdff888"
 		},
 		{
 			"key": "resultId",
-			"value": ""
+			"value": "3e801ab9-924a-4810-9cb7-8d691b2b3e16"
 		},
 		{
 			"key": "noticeId",
-			"value": ""
+			"value": "3558c59f-4186-4951-bab6-2074bb354044"
 		},
 		{
 			"key": "paymentId",
-			"value": ""
+			"value": "079e2eb4-15b5-494d-93b1-0c77585c64c4"
 		},
 		{
 			"key": "bkashPaymentId",
-			"value": ""
+			"value": "TR0011DemoPayment001"
 		},
 		{
 			"key": "userId",
-			"value": ""
+			"value": "d62e58dc-6acd-4ca0-87d7-a72f09f2105a"
 		}
 	],
 	"item": [
@@ -375,7 +375,7 @@
 						"description": "Public. Only logs in an EXISTING account matched by email — does not self-register (a Google signup has no department/semester to attach).\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }.",
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"idToken\": \"<google-id-token>\"\n}",
+							"raw": "{\n  \"idToken\": \"demo-google-id-token\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -484,7 +484,17 @@
 								"profile-image"
 							]
 						},
-						"description": "multipart/form-data with a `profileImage` file field. Not representable as a JSON body here — set the body type to form-data in Postman.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }."
+						"description": "multipart/form-data with a `profileImage` file field (image files only, max 5 MB). The form-data field is set up already — pick an image file in the Body tab before sending.\n\nError responses always look like: { success: false, statusCode, message, errors?: [{ path, message }] }.",
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "profileImage",
+									"type": "file",
+									"src": []
+								}
+							]
+						}
 					}
 				},
 				{
@@ -503,7 +513,7 @@
 							]
 						},
 						"url": {
-							"raw": "{{baseUrl}}/users?page=1&limit=10&role=STUDENT&searchTerm=&sortBy=createdAt&sortOrder=desc",
+							"raw": "{{baseUrl}}/users?page=1&limit=10&role=STUDENT&searchTerm=tester&sortBy=createdAt&sortOrder=desc",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -525,7 +535,7 @@
 								},
 								{
 									"key": "searchTerm",
-									"value": ""
+									"value": "tester"
 								},
 								{
 									"key": "sortBy",
@@ -720,7 +730,7 @@
 							"type": "noauth"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/departments?page=1&limit=10&searchTerm=&sortBy=name&sortOrder=asc",
+							"raw": "{{baseUrl}}/departments?page=1&limit=10&searchTerm=Computer&sortBy=name&sortOrder=asc",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -738,7 +748,7 @@
 								},
 								{
 									"key": "searchTerm",
-									"value": ""
+									"value": "Computer"
 								},
 								{
 									"key": "sortBy",
@@ -882,7 +892,7 @@
 							"type": "noauth"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/semesters?page=1&limit=10&status=&searchTerm=",
+							"raw": "{{baseUrl}}/semesters?page=1&limit=10&status=ONGOING&searchTerm=FALL",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -900,11 +910,11 @@
 								},
 								{
 									"key": "status",
-									"value": ""
+									"value": "ONGOING"
 								},
 								{
 									"key": "searchTerm",
-									"value": ""
+									"value": "FALL"
 								}
 							]
 						},
@@ -1040,7 +1050,7 @@
 							"type": "noauth"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/faculties?page=1&limit=10&departmentId=&searchTerm=",
+							"raw": "{{baseUrl}}/faculties?page=1&limit=10&searchTerm=Tester",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -1058,11 +1068,12 @@
 								},
 								{
 									"key": "departmentId",
-									"value": ""
+									"value": "{{departmentId}}",
+									"disabled": true
 								},
 								{
 									"key": "searchTerm",
-									"value": ""
+									"value": "Tester"
 								}
 							]
 						},
@@ -1251,7 +1262,7 @@
 							]
 						},
 						"url": {
-							"raw": "{{baseUrl}}/students?page=1&limit=10&departmentId=&admissionSemesterId=&searchTerm=",
+							"raw": "{{baseUrl}}/students?page=1&limit=10&searchTerm=Tester",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -1269,15 +1280,17 @@
 								},
 								{
 									"key": "departmentId",
-									"value": ""
+									"value": "{{departmentId}}",
+									"disabled": true
 								},
 								{
 									"key": "admissionSemesterId",
-									"value": ""
+									"value": "{{semesterId}}",
+									"disabled": true
 								},
 								{
 									"key": "searchTerm",
-									"value": ""
+									"value": "Tester"
 								}
 							]
 						},
@@ -1420,7 +1433,7 @@
 							"type": "noauth"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/courses?page=1&limit=10&departmentId=&searchTerm=",
+							"raw": "{{baseUrl}}/courses?page=1&limit=10&searchTerm=Programming",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -1438,11 +1451,12 @@
 								},
 								{
 									"key": "departmentId",
-									"value": ""
+									"value": "{{departmentId}}",
+									"disabled": true
 								},
 								{
 									"key": "searchTerm",
-									"value": ""
+									"value": "Programming"
 								}
 							]
 						},
@@ -1578,7 +1592,7 @@
 							"type": "noauth"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/course-offerings?page=1&limit=10&semesterId=&courseId=&facultyId=",
+							"raw": "{{baseUrl}}/course-offerings?page=1&limit=10",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -1596,15 +1610,18 @@
 								},
 								{
 									"key": "semesterId",
-									"value": ""
+									"value": "{{semesterId}}",
+									"disabled": true
 								},
 								{
 									"key": "courseId",
-									"value": ""
+									"value": "{{courseId}}",
+									"disabled": true
 								},
 								{
 									"key": "facultyId",
-									"value": ""
+									"value": "{{facultyId}}",
+									"disabled": true
 								}
 							]
 						},
@@ -1790,7 +1807,7 @@
 							]
 						},
 						"url": {
-							"raw": "{{baseUrl}}/enrollments?page=1&limit=10&status=&studentId=&courseOfferingId=",
+							"raw": "{{baseUrl}}/enrollments?page=1&limit=10&status=PENDING",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -1808,15 +1825,17 @@
 								},
 								{
 									"key": "status",
-									"value": ""
+									"value": "PENDING"
 								},
 								{
 									"key": "studentId",
-									"value": ""
+									"value": "{{studentId}}",
+									"disabled": true
 								},
 								{
 									"key": "courseOfferingId",
-									"value": ""
+									"value": "{{courseOfferingId}}",
+									"disabled": true
 								}
 							]
 						},
@@ -1967,7 +1986,7 @@
 							]
 						},
 						"url": {
-							"raw": "{{baseUrl}}/results?page=1&limit=10&studentId=&semesterId=&courseOfferingId=",
+							"raw": "{{baseUrl}}/results?page=1&limit=10",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -1985,15 +2004,18 @@
 								},
 								{
 									"key": "studentId",
-									"value": ""
+									"value": "{{studentId}}",
+									"disabled": true
 								},
 								{
 									"key": "semesterId",
-									"value": ""
+									"value": "{{semesterId}}",
+									"disabled": true
 								},
 								{
 									"key": "courseOfferingId",
-									"value": ""
+									"value": "{{courseOfferingId}}",
+									"disabled": true
 								}
 							]
 						},
@@ -2136,7 +2158,7 @@
 							"type": "noauth"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/notices?page=1&limit=10&searchTerm=",
+							"raw": "{{baseUrl}}/notices?page=1&limit=10&searchTerm=Midterm",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -2154,7 +2176,7 @@
 								},
 								{
 									"key": "searchTerm",
-									"value": ""
+									"value": "Midterm"
 								}
 							]
 						},
@@ -2388,7 +2410,7 @@
 							]
 						},
 						"url": {
-							"raw": "{{baseUrl}}/payments?page=1&limit=10&status=&semesterId=&studentId=",
+							"raw": "{{baseUrl}}/payments?page=1&limit=10&status=PENDING",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -2406,15 +2428,17 @@
 								},
 								{
 									"key": "status",
-									"value": ""
+									"value": "PENDING"
 								},
 								{
 									"key": "semesterId",
-									"value": ""
+									"value": "{{semesterId}}",
+									"disabled": true
 								},
 								{
 									"key": "studentId",
-									"value": ""
+									"value": "{{studentId}}",
+									"disabled": true
 								}
 							]
 						},
@@ -2470,7 +2494,7 @@
 							]
 						},
 						"url": {
-							"raw": "{{baseUrl}}/admin/audit-logs?page=1&limit=20&action=&entityType=&entityId=&performedByUserId=&from=&to=",
+							"raw": "{{baseUrl}}/admin/audit-logs?page=1&limit=20&action=USER_LOGIN&entityType=User&from=2026-01-01&to=2030-12-31",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -2489,27 +2513,29 @@
 								},
 								{
 									"key": "action",
-									"value": ""
+									"value": "USER_LOGIN"
 								},
 								{
 									"key": "entityType",
-									"value": ""
+									"value": "User"
 								},
 								{
 									"key": "entityId",
-									"value": ""
+									"value": "{{userId}}",
+									"disabled": true
 								},
 								{
 									"key": "performedByUserId",
-									"value": ""
+									"value": "{{userId}}",
+									"disabled": true
 								},
 								{
 									"key": "from",
-									"value": ""
+									"value": "2026-01-01"
 								},
 								{
 									"key": "to",
-									"value": ""
+									"value": "2030-12-31"
 								}
 							]
 						},
