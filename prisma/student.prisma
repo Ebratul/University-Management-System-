@@ -1,0 +1,22 @@
+model Student {
+  id                  String       @id @default(uuid())
+  userId              String       @unique
+  studentId           String       @unique
+  name                String
+  phone               String?
+  dateOfBirth         DateTime
+  departmentId        String
+  admissionSemesterId String
+  user                User         @relation(fields: [userId], references: [id])
+  department          Department   @relation(fields: [departmentId], references: [id])
+  admissionSemester   Semester     @relation(fields: [admissionSemesterId], references: [id])
+  enrollments         Enrollment[]
+  payments            Payment[]
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  @@index([userId])
+  @@index([departmentId])
+  @@index([admissionSemesterId])
+  @@map("students")
+}

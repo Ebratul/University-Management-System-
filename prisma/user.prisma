@@ -1,0 +1,19 @@
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  password      String?
+  googleId      String?        @unique
+  role          Role
+  isActive      Boolean        @default(true)
+  admin         Admin?
+  faculty       Faculty?
+  student       Student?
+  refreshTokens RefreshToken[]
+  notices       Notice[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([role])
+  @@index([isActive])
+  @@map("users")
+}
