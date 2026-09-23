@@ -212,7 +212,7 @@ const deleteStudent = async (id: string, actor: IActor) => {
 	}
 
 	const now = new Date();
-	await prisma.$transaction(async (tx) => {
+	await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
 		await tx.student.update({ where: { id }, data: { deletedAt: now } });
 		await tx.user.update({
 			where: { id: student.userId },

@@ -69,21 +69,23 @@ const publishResult = async (payload: ICreateResultPayload, actor: IActor) => {
 
 	await assertFacultyOwnsOffering(actor, enrollment.courseOffering.facultyId);
 
-	const result = await prisma.$transaction(async (tx) => {
-		const created = await tx.result.create({
-			data: {
-				enrollmentId: enrollment.id,
-				grade: payload.grade,
-				gradePoint: payload.gradePoint,
-			},
-			include: RELATION_SELECT,
-		});
-		await tx.enrollment.update({
-			where: { id: enrollment.id },
-			data: { status: "COMPLETED" },
-		});
-		return created;
-	});
+	const result = await prisma.$transaction(
+		async (tx: Prisma.TransactionClient) => {
+			const created = await tx.result.create({
+				data: {
+					enrollmentId: enrollment.id,
+					grade: payload.grade,
+					gradePoint: payload.gradePoint,
+				},
+				include: RELATION_SELECT,
+			});
+			await tx.enrollment.update({
+				where: { id: enrollment.id },
+				data: { status: "COMPLETED" },
+			});
+			return created;
+		},
+	);
 
 	await recordAuditLog({
 		action: "RESULT_PUBLISHED",

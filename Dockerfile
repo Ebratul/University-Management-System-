@@ -9,7 +9,7 @@ FROM node:24-slim AS build
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-# `prisma generate` never opens a DB connection, but prisma7.config.ts
+# `prisma generate` never opens a DB connection, but prisma.config.ts
 # resolves DATABASE_URL eagerly via env() while loading the config file, so
 # it throws if the var is unset — no .env is (or should be) available at
 # build time. This placeholder is never used to actually connect; it's
