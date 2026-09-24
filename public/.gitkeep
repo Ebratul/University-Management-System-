@@ -1,0 +1,3 @@
+This directory exists only so Vercel's static "Output Directory" check
+passes (this project is API-only, served entirely from api/index.ts —
+see vercel.json). It's intentionally otherwise empty.

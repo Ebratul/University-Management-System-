@@ -1,11 +1,11 @@
 import { Router } from "express";
 import httpStatus from "http-status";
 import { prisma } from "../lib/prisma";
-import { redisClient } from "../lib/redis";
+import { ensureRedisConnected, redisClient } from "../lib/redis";
 import { AdminRouter } from "../module/admin/admin.router";
 import { AuthRouter } from "../module/auth/auth.router";
-import { CourseOfferingRouter } from "../module/course-offering/course-offering.router";
 import { CourseRouter } from "../module/course/course.router";
+import { CourseOfferingRouter } from "../module/course-offering/course-offering.router";
 import { DepartmentRouter } from "../module/department/department.router";
 import { EnrollmentRouter } from "../module/enrollment/enrollment.router";
 import { FacultyRouter } from "../module/faculty/faculty.router";
@@ -21,7 +21,7 @@ const router = Router();
 router.get("/health", async (_req, res) => {
 	const [dbResult, redisResult] = await Promise.allSettled([
 		prisma.$queryRaw`SELECT 1`,
-		redisClient.ping(),
+		ensureRedisConnected().then(() => redisClient.ping()),
 	]);
 
 	const database = dbResult.status === "fulfilled" ? "up" : "down";

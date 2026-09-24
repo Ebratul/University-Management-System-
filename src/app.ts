@@ -10,11 +10,18 @@ import helmet from "helmet";
 import httpStatus from "http-status";
 
 import config from "./config";
+import { validateEnv } from "./config/validateEnv";
 import { globalErrorHandler } from "./middleware/globalErrorHandler";
 import { notFound } from "./middleware/notFound";
 import { generalLimiter } from "./middleware/rateLimiter";
 import { requestLogger } from "./middleware/requestLogger";
 import { apiRouter } from "./routes";
+
+// Also called explicitly in server.ts's main() before boot-only work (DB
+// connect, seeding) — redundant there, but this is the only validateEnv
+// call api/index.ts's serverless entrypoint gets, since it imports this
+// module (via the tsup-bundled dist/app.js) instead of running main().
+validateEnv();
 
 const app: Application = express();
 

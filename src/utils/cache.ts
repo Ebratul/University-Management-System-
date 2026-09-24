@@ -1,4 +1,4 @@
-import { redisClient } from "../lib/redis";
+import { ensureRedisConnected, redisClient } from "../lib/redis";
 
 const DEFAULT_TTL_SECONDS = 300;
 
@@ -7,6 +7,7 @@ const DEFAULT_TTL_SECONDS = 300;
 
 export const cacheGet = async <T>(key: string): Promise<T | null> => {
 	try {
+		await ensureRedisConnected();
 		const raw = await redisClient.get(key);
 		return raw ? (JSON.parse(raw) as T) : null;
 	} catch (error) {
@@ -21,6 +22,7 @@ export const cacheSet = async (
 	ttlSeconds = DEFAULT_TTL_SECONDS,
 ): Promise<void> => {
 	try {
+		await ensureRedisConnected();
 		await redisClient.set(key, JSON.stringify(value), {
 			expiration: { type: "EX", value: ttlSeconds },
 		});
@@ -33,6 +35,7 @@ export const cacheInvalidateByPrefix = async (
 	prefix: string,
 ): Promise<void> => {
 	try {
+		await ensureRedisConnected();
 		const keys: string[] = [];
 		for await (const batch of redisClient.scanIterator({
 			MATCH: `${prefix}*`,

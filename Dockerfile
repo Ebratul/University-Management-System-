@@ -2,7 +2,12 @@
 FROM node:24-slim AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
+# --ignore-scripts: package.json's postinstall runs `prisma generate`, which
+# needs DATABASE_URL (prisma.config.ts resolves it eagerly) and isn't set
+# here. The build stage below generates explicitly, with a placeholder URL,
+# after this layer's node_modules are copied in — so skipping it here is a
+# no-op, not a missing step.
+RUN npm ci --ignore-scripts
 
 # --- build: compile TypeScript and generate the Prisma client ---
 FROM node:24-slim AS build
@@ -24,7 +29,10 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev && npm cache clean --force
+# --ignore-scripts: same postinstall as above, and this stage has no prisma
+# CLI at all (it's a devDependency, excluded by --omit=dev) — the generated
+# client below is copied in from the build stage instead of regenerated here.
+RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
 
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
@@ -37,4 +45,4 @@ RUN groupadd --system nodejs && useradd --system --gid nodejs nodejs
 USER nodejs
 
 EXPOSE 5000
-CMD ["node", "dist/src/server.js"]
+CMD ["node", "dist/server.js"]

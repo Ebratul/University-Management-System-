@@ -27,7 +27,7 @@ Other useful scripts:
 |---|---|
 | `npm run dev` | Start the dev server with `tsx watch` |
 | `npm run build` | Compile to `dist/` |
-| `npm start` | Run the compiled build (`dist/src/server.js`) |
+| `npm start` | Run the compiled build (`dist/server.js`) |
 | `npm run migrate:deploy` | Apply pending Prisma migrations (`prisma migrate deploy`) |
 | `npm run seed` | Run `prisma/../src/utils/seed.ts` (idempotent — safe to re-run) |
 | `npm run typecheck` | `tsc --noEmit` |

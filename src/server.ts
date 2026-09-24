@@ -61,4 +61,11 @@ process.on("uncaughtException", (error) => {
 	server?.close(() => process.exit(1));
 });
 
-main();
+// Vercel invokes the Express app from api/index.ts (the tsup-bundled
+// dist/app.js). Do not boot a long-lived HTTP listener there — serverless
+// functions are request-scoped and already have a port assigned.
+export default app;
+
+if (!process.env.VERCEL) {
+	main();
+}

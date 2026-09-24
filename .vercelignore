@@ -1,0 +1,6 @@
+# @vercel/nft auto-includes .env in the function bundle when it sees dotenv
+# imported (for local dev parity) — this project gets every env var from
+# Vercel's own Environment Variables instead, so that file must never ship.
+.env
+.env.*
+!.env.example
