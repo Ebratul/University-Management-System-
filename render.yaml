@@ -13,8 +13,9 @@ services:
   - type: web
     name: university-api
     runtime: docker
-    dockerfilePath: ./Dockerfile
-    dockerContext: .
+    # Monorepo: the API lives in backend/, so the build context is that folder.
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
     plan: free
     healthCheckPath: /api/v1/health
     envVars:

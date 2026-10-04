@@ -1,0 +1,65 @@
+import type { ListQuery } from "@/types/api";
+
+/**
+ * Central query-key factory. Keys are hierarchical so that invalidating a
+ * parent (for example `queryKeys.courses.all`) refreshes every child list and
+ * detail query beneath it.
+ */
+export const queryKeys = {
+  me: ["me"] as const,
+
+  departments: {
+    all: ["departments"] as const,
+    list: (query?: ListQuery) => ["departments", "list", query ?? {}] as const,
+    detail: (id: string) => ["departments", "detail", id] as const,
+  },
+  courses: {
+    all: ["courses"] as const,
+    list: (query?: ListQuery) => ["courses", "list", query ?? {}] as const,
+    detail: (id: string) => ["courses", "detail", id] as const,
+  },
+  faculties: {
+    all: ["faculties"] as const,
+    list: (query?: ListQuery) => ["faculties", "list", query ?? {}] as const,
+  },
+  semesters: {
+    all: ["semesters"] as const,
+    list: (query?: ListQuery) => ["semesters", "list", query ?? {}] as const,
+  },
+  courseOfferings: {
+    all: ["course-offerings"] as const,
+    list: (query?: ListQuery) => ["course-offerings", "list", query ?? {}] as const,
+  },
+  notices: {
+    all: ["notices"] as const,
+    list: (query?: ListQuery) => ["notices", "list", query ?? {}] as const,
+    detail: (id: string) => ["notices", "detail", id] as const,
+  },
+  users: {
+    all: ["users"] as const,
+    list: (query?: ListQuery) => ["users", "list", query ?? {}] as const,
+  },
+  students: {
+    all: ["students"] as const,
+    list: (query?: ListQuery) => ["students", "list", query ?? {}] as const,
+    detail: (id: string) => ["students", "detail", id] as const,
+  },
+  enrollments: {
+    all: ["enrollments"] as const,
+    list: (query?: ListQuery) => ["enrollments", "list", query ?? {}] as const,
+  },
+  payments: {
+    all: ["payments"] as const,
+    list: (query?: ListQuery) => ["payments", "list", query ?? {}] as const,
+    detail: (id: string) => ["payments", "detail", id] as const,
+  },
+  results: {
+    all: ["results"] as const,
+    list: (query?: ListQuery) => ["results", "list", query ?? {}] as const,
+  },
+  auditLogs: {
+    all: ["audit-logs"] as const,
+    list: (query?: ListQuery) => ["audit-logs", "list", query ?? {}] as const,
+  },
+  adminStats: ["admin", "dashboard-stats"] as const,
+} as const;

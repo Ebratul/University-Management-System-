@@ -9,6 +9,11 @@ jobs:
   ci:
     runs-on: ubuntu-latest
 
+    # The API lives in backend/; every run step below executes there.
+    defaults:
+      run:
+        working-directory: backend
+
     services:
       postgres:
         image: postgres:16-alpine
@@ -38,6 +43,7 @@ jobs:
         with:
           node-version: 24
           cache: npm
+          cache-dependency-path: backend/package-lock.json
 
       - run: npm ci
 
