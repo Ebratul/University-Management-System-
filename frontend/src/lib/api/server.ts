@@ -28,6 +28,8 @@ type ServerRequestOptions = {
    * refreshed in the background. Omit for personal data.
    */
   revalidate?: number;
+  /** Cache tags, so `revalidateTag` can refresh this read on demand. */
+  tags?: string[];
   /** Personal data: forward the visitor's auth cookies and never cache. */
   forwardCookies?: boolean;
 };
@@ -55,7 +57,7 @@ export async function serverRequest<T>(
       cache: options.forwardCookies ? "no-store" : undefined,
       next:
         options.revalidate !== undefined
-          ? { revalidate: options.revalidate }
+          ? { revalidate: options.revalidate, tags: options.tags }
           : undefined,
     });
   } catch (error) {

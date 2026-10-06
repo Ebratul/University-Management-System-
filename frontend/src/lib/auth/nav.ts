@@ -15,6 +15,7 @@ export const ADMIN_NAV: AppNavItem[] = [
   { label: "Enrolments", href: "/admin/enrollments", roles: ["ADMIN"] },
   { label: "Notices", href: "/admin/notices", roles: ["ADMIN"] },
   { label: "Payments", href: "/admin/payments", roles: ["ADMIN"] },
+  { label: "Website", href: "/admin/website", roles: ["ADMIN"] },
   { label: "Audit log", href: "/admin/audit-logs", roles: ["ADMIN"] },
 ];
 

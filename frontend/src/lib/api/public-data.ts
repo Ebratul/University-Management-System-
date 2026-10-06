@@ -6,7 +6,9 @@ import type {
   Department,
   Faculty,
   Notice,
+  WebsiteSettings,
 } from "@/types/entities";
+import { DEFAULT_WEBSITE_SETTINGS, WEBSITE_SETTINGS_TAG } from "@/lib/website-settings";
 
 import { fetchAllPages, fetchOne, serverRequest } from "./server";
 
@@ -71,4 +73,20 @@ export async function getLatestNotices(count = 3): Promise<Notice[]> {
     query: { limit: count, sortBy: "createdAt", sortOrder: "desc" },
   });
   return envelope.data;
+}
+
+/**
+ * Public branding. Never throws: if the API is down the site falls back to
+ * the defaults. Tagged so an admin save can refresh it immediately.
+ */
+export async function getWebsiteSettings(): Promise<WebsiteSettings> {
+  try {
+    const envelope = await serverRequest<WebsiteSettings>("/website-settings", {
+      revalidate: PUBLIC_REVALIDATE,
+      tags: [WEBSITE_SETTINGS_TAG],
+    });
+    return envelope.data;
+  } catch {
+    return DEFAULT_WEBSITE_SETTINGS;
+  }
 }

@@ -116,6 +116,11 @@ export const noticeSchema = z.object({
   audience: z.enum(["ALL", "STUDENT", "FACULTY"]),
 });
 
+export const websiteSettingsSchema = z.object({
+  universityName: requiredText(2, 120, "University name"),
+  tagline: requiredText(2, 240, "Tagline"),
+});
+
 /** Converts an optional string field to undefined when empty, so it is omitted from the body. */
 export const emptyToUndefined = (value: string | undefined) => (value && value.trim() !== "" ? value.trim() : undefined);
 
@@ -129,6 +134,7 @@ export type OfferingUpdateInput = z.infer<typeof offeringUpdateSchema>;
 export type AdminUserInput = z.infer<typeof adminUserSchema>;
 export type StudentUpdateInput = z.infer<typeof studentUpdateSchema>;
 export type NoticeInput = z.infer<typeof noticeSchema>;
+export type WebsiteSettingsInput = z.infer<typeof websiteSettingsSchema>;
 
 /** Grade letters and the grade point each one maps to. Faculty can still override the point. */
 export const GRADE_POINTS: Record<string, number> = {

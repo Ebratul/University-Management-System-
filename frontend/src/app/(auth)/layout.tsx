@@ -3,6 +3,8 @@ import { BookOpenCheck, GraduationCap, ShieldCheck, Users } from "lucide-react";
 
 import { Logo } from "@/components/layout/logo";
 import { SkipLink } from "@/components/layout/skip-link";
+import { BrandImage } from "@/components/website/brand-image";
+import { getWebsiteSettings } from "@/lib/api/public-data";
 
 const highlights = [
   { icon: ShieldCheck, text: "Role-based access for administrators, faculty and students" },
@@ -12,7 +14,9 @@ const highlights = [
 ];
 
 /** Split layout: a brand panel on wide screens, the form alone on mobile. */
-export default function AuthLayout({ children }: { children: ReactNode }) {
+export default async function AuthLayout({ children }: { children: ReactNode }) {
+  const { universityName, logoUrl } = await getWebsiteSettings();
+
   return (
     <div className="grid min-h-dvh lg:grid-cols-[1fr_1.1fr]">
       <SkipLink />
@@ -25,8 +29,20 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
         <div className="absolute -bottom-40 -left-24 size-96 rounded-full bg-black/10 blur-3xl" />
 
         <div className="relative">
-          <span className="flex size-12 items-center justify-center rounded-2xl bg-white/15 backdrop-blur">
-            <GraduationCap className="size-6" />
+          <span
+            className={
+              logoUrl
+                ? "flex size-16 items-center justify-center rounded-2xl bg-white p-2 shadow-lg shadow-black/20"
+                : "flex size-12 items-center justify-center rounded-2xl bg-white/15 backdrop-blur"
+            }
+          >
+            <BrandImage
+              src={logoUrl}
+              alt=""
+              className="size-full object-contain"
+              priority
+              fallback={<GraduationCap className="size-6" />}
+            />
           </span>
         </div>
 
@@ -46,12 +62,12 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
           </ul>
         </div>
 
-        <p className="relative text-xs text-white/70">University Management System</p>
+        <p className="relative text-xs text-white/70">{universityName}</p>
       </aside>
 
       <div className="flex flex-col">
         <header className="flex h-16 items-center px-4 sm:px-6 lg:px-10">
-          <Logo />
+          <Logo name={universityName} logoUrl={logoUrl} />
         </header>
 
         <main id="main-content" tabIndex={-1} className="flex flex-1 items-start justify-center px-4 pt-4 pb-12 outline-none sm:px-6 sm:pt-10 lg:items-center lg:px-10">

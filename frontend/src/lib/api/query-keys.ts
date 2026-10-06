@@ -61,5 +61,6 @@ export const queryKeys = {
     all: ["audit-logs"] as const,
     list: (query?: ListQuery) => ["audit-logs", "list", query ?? {}] as const,
   },
+  websiteSettings: ["website-settings"] as const,
   adminStats: ["admin", "dashboard-stats"] as const,
 } as const;

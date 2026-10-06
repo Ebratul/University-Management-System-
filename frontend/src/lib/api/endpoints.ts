@@ -4,6 +4,7 @@ import type {
   CurrentUser,
   Department,
   Semester,
+  WebsiteSettings,
 } from "@/types/entities";
 
 import { apiListRequest, apiRequest } from "./client";
@@ -37,4 +38,26 @@ export const catalogApi = {
       sortBy: "year",
       sortOrder: "desc",
     }),
+};
+
+export const websiteSettingsApi = {
+  get: () => apiRequest<WebsiteSettings>("/website-settings"),
+
+  update: (body: { universityName?: string; tagline?: string }) =>
+    apiRequest<WebsiteSettings>("/website-settings", { method: "PATCH", body }),
+
+  uploadLogo: (file: File) => {
+    const body = new FormData();
+    body.append("logo", file);
+    return apiRequest<WebsiteSettings>("/website-settings/logo", { method: "POST", body });
+  },
+  removeLogo: () => apiRequest<WebsiteSettings>("/website-settings/logo", { method: "DELETE" }),
+
+  uploadBackground: (file: File) => {
+    const body = new FormData();
+    body.append("background", file);
+    return apiRequest<WebsiteSettings>("/website-settings/background", { method: "POST", body });
+  },
+  removeBackground: () =>
+    apiRequest<WebsiteSettings>("/website-settings/background", { method: "DELETE" }),
 };

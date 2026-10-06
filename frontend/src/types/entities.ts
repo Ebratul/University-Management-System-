@@ -201,3 +201,12 @@ export type Result = {
     };
   };
 };
+
+/** Public website branding. Response of GET /website-settings. */
+export type WebsiteSettings = {
+  universityName: string;
+  tagline: string;
+  logoUrl: string | null;
+  homepageBackgroundUrl: string | null;
+  updatedAt: string;
+};

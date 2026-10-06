@@ -15,6 +15,7 @@ import { ResultRouter } from "../module/result/result.router";
 import { SemesterRouter } from "../module/semester/semester.router";
 import { StudentRouter } from "../module/student/student.router";
 import { UserRoutes } from "../module/user/user.router";
+import { WebsiteSettingsRouter } from "../module/website-settings/website-settings.router";
 
 const router = Router();
 
@@ -51,6 +52,7 @@ router.use("/results", ResultRouter);
 router.use("/notices", NoticeRouter);
 router.use("/payments", PaymentRouter);
 router.use("/admin", AdminRouter);
+router.use("/website-settings", WebsiteSettingsRouter);
 
 // Remaining feature module routers are mounted here as they land.
 

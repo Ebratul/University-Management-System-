@@ -1,0 +1,15 @@
+// Single global row (id = "global"). Updated in place, never duplicated.
+model WebsiteSettings {
+  id                         String  @id @default("global")
+  universityName             String  @default("University Management System")
+  tagline                    String  @default("Excellence in education, research and service.")
+  logoUrl                    String?
+  logoPublicId               String?
+  homepageBackgroundUrl      String?
+  homepageBackgroundPublicId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("website_settings")
+}
