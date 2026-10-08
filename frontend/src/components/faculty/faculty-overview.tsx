@@ -47,7 +47,7 @@ export function FacultyOverview() {
         <div className="grid gap-4 sm:grid-cols-3">{Array.from({ length: 3 }, (_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)}</div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-3">
-          <StatCard label="Courses taught" value={offerings.data?.data.length ?? 0} hint="Current assignments" icon={BookOpen} tone="indigo" />
+          <StatCard label="Courses taught" value={offerings.data?.data.length ?? 0} hint={`${offerings.data?.data.filter((o) => o.semester.status !== "COMPLETED").length ?? 0} of 5 course slots in use`} icon={BookOpen} tone="indigo" />
           <StatCard label="Students across courses" value={students} hint="Enrolled right now" icon={Users} tone="teal" />
           <StatCard label="Results published" value={results.data?.meta.total ?? 0} hint="All your published grades" icon={Award} tone="violet" />
         </div>

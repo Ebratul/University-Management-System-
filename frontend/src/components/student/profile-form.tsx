@@ -134,7 +134,7 @@ export function ProfileForm() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Details</CardTitle>
-            <CardDescription>{user.student ? `Student ID ${user.student.studentId}` : user.faculty ? `Faculty ID ${user.faculty.facultyId}` : "Account details"}</CardDescription>
+            <CardDescription>{user.student ? `Registration no. ${user.student.registrationNumber} · Student ID ${user.student.studentId}` : user.faculty ? `Faculty ID ${user.faculty.facultyId}` : "Account details"}</CardDescription>
           </CardHeader>
           <CardContent>
             <form noValidate className="space-y-5" onSubmit={(event) => { event.preventDefault(); event.stopPropagation(); void form.handleSubmit(); }}>

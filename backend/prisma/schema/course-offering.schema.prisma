@@ -12,6 +12,9 @@ model CourseOffering {
   semester   Semester @relation(fields: [semesterId], references: [id])
 
   enrollments Enrollment[]
+  materials   CourseMaterial[]
+  attendances Attendance[]
+  quizzes     Quiz[]
 
   deletedAt DateTime?
   createdAt DateTime  @default(now())

@@ -6,10 +6,14 @@ import { BadgeDollarSign, Bell, BookOpen, GraduationCap } from "lucide-react";
 import { NoticeCard } from "@/components/catalog/cards";
 import { useSession } from "@/components/auth/session-provider";
 import { PageHeader } from "@/components/shared/page-header";
+import { PersonAvatar } from "@/components/shared/person-avatar";
 import { StatCard } from "@/components/shared/stat-card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useApiQuery } from "@/hooks/use-api-query";
+import { useDepartmentOptions, useSemesterOptions } from "@/hooks/use-options";
 import { apiListRequest } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import { getDisplayName } from "@/lib/auth/user";
@@ -24,6 +28,12 @@ export function StudentOverview() {
   const payments = useApiQuery({ queryKey: queryKeys.payments.list({ mine: true }), queryFn: () => apiListRequest<Payment>("/payments", { limit: 100 }) });
   const results = useApiQuery({ queryKey: queryKeys.results.list({ mine: true }), queryFn: () => apiListRequest<Result>("/results", { limit: 100 }) });
   const notices = useApiQuery({ queryKey: queryKeys.notices.list({ limit: 3, sortBy: "createdAt", sortOrder: "desc" }), queryFn: () => apiListRequest<Notice>("/notices", { limit: 3, sortBy: "createdAt", sortOrder: "desc" }) });
+
+  const departments = useDepartmentOptions();
+  const semesters = useSemesterOptions();
+  const departmentName = departments.options.find((d) => d.value === user.student?.departmentId)?.label;
+  const semesterName = semesters.options.find((s) => s.value === user.student?.admissionSemesterId)?.label;
+  const myCourses = enrollments.data?.data.filter((e) => e.status === "ENROLLED" || e.status === "COMPLETED") ?? [];
 
   const active = enrollments.data?.data.filter((e) => e.status === "ENROLLED").length;
   const pending = payments.data?.data.filter((p) => p.status === "PENDING").length;
@@ -43,6 +53,24 @@ export function StudentOverview() {
         }
       />
 
+      <Card>
+        <CardContent className="flex-row flex-wrap items-center gap-5">
+          <PersonAvatar name={getDisplayName(user)} imageUrl={user.imageUrl} className="size-20" />
+          <div className="min-w-0 space-y-1">
+            <p className="truncate text-lg font-semibold">{getDisplayName(user)}</p>
+            <p className="text-muted-foreground text-sm">{user.email}</p>
+            <div className="flex flex-wrap gap-2 pt-1">
+              {user.student ? <Badge variant="secondary" className="font-mono">Reg. {user.student.registrationNumber}</Badge> : null}
+              {departmentName ? <Badge variant="outline">{departmentName}</Badge> : null}
+              {semesterName ? <Badge variant="outline">Admitted {semesterName}</Badge> : null}
+            </div>
+          </div>
+          <Button asChild variant="outline" className="ml-auto">
+            <Link href="/student/profile">View profile</Link>
+          </Button>
+        </CardContent>
+      </Card>
+
       <section aria-labelledby="stats-heading" className="space-y-4">
         <h2 id="stats-heading" className="sr-only">Summary</h2>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -57,6 +85,36 @@ export function StudentOverview() {
             </>
           )}
         </div>
+      </section>
+
+      <section aria-labelledby="courses-heading" className="space-y-4">
+        <h2 id="courses-heading" className="text-lg font-semibold tracking-tight">My courses</h2>
+        {enrollments.isPending ? (
+          <Skeleton className="h-28 w-full rounded-xl" />
+        ) : myCourses.length === 0 ? (
+          <p className="text-muted-foreground text-sm">You are not enrolled in any course yet. Browse courses to enrol.</p>
+        ) : (
+          <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {myCourses.map((e) => (
+              <li key={e.id}>
+                <Card className="h-full transition-shadow hover:shadow-md">
+                  <CardContent className="flex h-full flex-col gap-3">
+                    <div className="min-w-0">
+                      <p className="text-muted-foreground font-mono text-xs">{e.courseOffering.course.courseCode}</p>
+                      <h3 className="truncate font-semibold" title={e.courseOffering.course.title}>{e.courseOffering.course.title}</h3>
+                      <p className="text-muted-foreground text-xs">
+                        {e.courseOffering.semester ? `${e.courseOffering.semester.code} ${e.courseOffering.semester.year}` : ""} · {e.courseOffering.course.credits} credits
+                      </p>
+                    </div>
+                    <Button asChild variant="outline" size="sm" className="mt-auto w-fit">
+                      <Link href={`/student/offerings/${e.courseOffering.id}`}>Open course</Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <section aria-labelledby="notices-heading" className="space-y-4">

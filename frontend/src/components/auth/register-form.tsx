@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "@tanstack/react-form";
-import { useQueryClient } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { Camera, Loader2, X } from "lucide-react";
 
 import { FieldMessage } from "@/components/forms/field-message";
 import { Button } from "@/components/ui/button";
@@ -18,7 +17,6 @@ import { useApiQuery } from "@/hooks/use-api-query";
 import { authApi, catalogApi } from "@/lib/api/endpoints";
 import { toApiError } from "@/lib/api/errors";
 import { queryKeys } from "@/lib/api/query-keys";
-import { homeForRole } from "@/lib/auth/roles";
 import { registerSchema, toRegisterPayload, type RegisterFormInput } from "@/lib/validations/auth";
 
 const emptyValues: RegisterFormInput = {
@@ -26,6 +24,8 @@ const emptyValues: RegisterFormInput = {
   email: "",
   password: "",
   confirmPassword: "",
+  registrationNumber: "",
+  picture: null,
   phone: "",
   dateOfBirth: "",
   departmentId: "",
@@ -34,7 +34,6 @@ const emptyValues: RegisterFormInput = {
 
 export function RegisterForm() {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const [serverError, setServerError] = useState<string | null>(null);
 
   const departments = useApiQuery({
@@ -49,11 +48,14 @@ export function RegisterForm() {
   const register = useApiMutation({
     mutationFn: (values: RegisterFormInput) => authApi.register(toRegisterPayload(values)),
     notifyError: false,
-    successMessage: "Account created. Welcome!",
-    onSuccess: (session) => {
-      queryClient.clear();
-      router.replace(homeForRole(session.role));
-      router.refresh();
+    successMessage: (result, values) =>
+      result.emailSent
+        ? `Welcome, ${values.name.trim().split(/\s+/)[0]}! We sent a 6-digit code to ${values.email.trim()}.`
+        : "Account created, but we could not send the code. Use “Resend code” on the next screen.",
+    onSuccess: (result, values) => {
+      // Not signed in yet: the emailed code proves the address first.
+      const email = encodeURIComponent(values.email.trim());
+      router.replace(`/verify-email?email=${email}${result.emailSent ? "&sent=1" : ""}`);
     },
   });
 
@@ -101,6 +103,16 @@ export function RegisterForm() {
           {(field) => (
             <TextField field={field} label="Email" type="email" autoComplete="email" placeholder="you@university.edu" className="sm:col-span-2" />
           )}
+        </form.Field>
+
+        <form.Field name="registrationNumber">
+          {(field) => (
+            <TextField field={field} label="Registration number" autoComplete="off" placeholder="e.g. 2024-CSE-001" className="sm:col-span-2" hint="Your university registration number. It must be unique." />
+          )}
+        </form.Field>
+
+        <form.Field name="picture">
+          {(field) => <PictureField field={field} />}
         </form.Field>
 
         <form.Field name="password">
@@ -268,4 +280,92 @@ function SelectField({
       <FieldMessage id={`${field.name}-error`} errors={errors} />
     </div>
   );
+}
+
+type PictureFieldApi = {
+  name: string;
+  state: { value: File | null; meta: { isTouched: boolean; errors: unknown[] } };
+  handleBlur: () => void;
+  handleChange: (value: File | null) => void;
+};
+
+/** Required student picture with a live preview. It becomes the profile picture. */
+function PictureField({ field }: { field: PictureFieldApi }) {
+  const file = field.state.value;
+  const errors = field.state.meta.isTouched ? field.state.meta.errors : [];
+  const errorId = `${field.name}-error`;
+  const inputRef = useRef<HTMLInputElement>(null);
+  const preview = useFilePreview(file);
+
+  return (
+    <div className="space-y-2 sm:col-span-2">
+      <Label htmlFor={field.name}>Student picture</Label>
+      <div className="flex items-center gap-4">
+        <span
+          className="bg-muted text-muted-foreground flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-full border"
+          aria-hidden="true"
+        >
+          {preview ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={preview} alt="" className="size-full object-cover" />
+          ) : (
+            <Camera className="size-7" />
+          )}
+        </span>
+        <div className="min-w-0 space-y-2">
+          <input
+            ref={inputRef}
+            id={field.name}
+            name={field.name}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="sr-only"
+            aria-invalid={errors.length > 0}
+            aria-describedby={errors.length ? errorId : `${field.name}-hint`}
+            onBlur={field.handleBlur}
+            onChange={(event) => field.handleChange(event.target.files?.[0] ?? null)}
+          />
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={() => inputRef.current?.click()}>
+              {file ? "Change picture" : "Choose picture"}
+            </Button>
+            {file ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  field.handleChange(null);
+                  if (inputRef.current) inputRef.current.value = "";
+                }}
+              >
+                <X className="size-4" aria-hidden="true" />
+                Remove
+              </Button>
+            ) : null}
+          </div>
+          <p id={`${field.name}-hint`} className="text-muted-foreground truncate text-xs">
+            {file ? file.name : "JPG, PNG or WebP, up to 5 MB. This becomes your profile picture."}
+          </p>
+        </div>
+      </div>
+      <FieldMessage id={errorId} errors={errors} />
+    </div>
+  );
+}
+
+/** A data-URL preview of a File. State is set from the reader callback, never synchronously. */
+function useFilePreview(file: File | null): string | null {
+  const [loaded, setLoaded] = useState<{ file: File; url: string } | null>(null);
+  useEffect(() => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setLoaded({ file, url: String(reader.result) });
+    reader.readAsDataURL(file);
+    return () => {
+      reader.onload = null;
+      if (reader.readyState === FileReader.LOADING) reader.abort();
+    };
+  }, [file]);
+  return file && loaded?.file === file ? loaded.url : null;
 }

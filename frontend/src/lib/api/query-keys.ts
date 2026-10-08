@@ -61,6 +61,20 @@ export const queryKeys = {
     all: ["audit-logs"] as const,
     list: (query?: ListQuery) => ["audit-logs", "list", query ?? {}] as const,
   },
+  course: {
+    offering: (id: string) => ["course", id, "offering"] as const,
+    materials: (id: string) => ["course", id, "materials"] as const,
+    attendanceAll: (id: string) => ["course", id, "attendance"] as const,
+    attendanceRoster: (id: string, date: string) => ["course", id, "attendance", "roster", date] as const,
+    attendanceSummary: (id: string) => ["course", id, "attendance", "summary"] as const,
+    attendanceMine: (id: string) => ["course", id, "attendance", "mine"] as const,
+    quizzes: (id: string) => ["course", id, "quizzes"] as const,
+  },
+  quiz: {
+    detail: (id: string) => ["quiz", id] as const,
+    results: (id: string, query?: object) => ["quiz", id, "results", query ?? {}] as const,
+    myResult: (id: string) => ["quiz", id, "my-result"] as const,
+  },
   websiteSettings: ["website-settings"] as const,
   adminStats: ["admin", "dashboard-stats"] as const,
 } as const;

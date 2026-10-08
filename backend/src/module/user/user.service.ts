@@ -34,6 +34,7 @@ const PROFILE_SELECT = {
 		select: {
 			id: true,
 			studentId: true,
+			registrationNumber: true,
 			name: true,
 			phone: true,
 			dateOfBirth: true,

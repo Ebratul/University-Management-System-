@@ -1,0 +1,2 @@
+export const MAX_QUESTIONS_PER_QUIZ = 100;
+export const MAX_QUIZ_DURATION_MINUTES = 300;

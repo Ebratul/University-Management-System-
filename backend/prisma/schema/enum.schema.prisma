@@ -28,3 +28,29 @@ enum NoticeAudience {
   STUDENT
   FACULTY
 }
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+}
+
+// DRAFT -> UPCOMING (published) -> ACTIVE (teacher pressed Start) -> ENDED.
+enum QuizStatus {
+  DRAFT
+  UPCOMING
+  ACTIVE
+  ENDED
+}
+
+enum QuizChoice {
+  A
+  B
+  C
+  D
+}
+
+enum QuizAttemptStatus {
+  IN_PROGRESS
+  SUBMITTED
+  AUTO_SUBMITTED
+}

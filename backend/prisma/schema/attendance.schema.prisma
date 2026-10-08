@@ -1,0 +1,23 @@
+// One row per student per course offering per calendar day. Re-marking the same
+// day updates the row instead of adding a duplicate.
+model Attendance {
+  id     String           @id @default(uuid())
+  date   DateTime         @db.Date
+  status AttendanceStatus
+
+  courseOfferingId String
+  courseOffering   CourseOffering @relation(fields: [courseOfferingId], references: [id])
+
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id])
+
+  markedByUserId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([courseOfferingId, studentId, date])
+  @@index([studentId])
+  @@index([courseOfferingId, date])
+  @@map("attendances")
+}

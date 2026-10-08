@@ -13,6 +13,15 @@ const CreateZodSchema = z.object({
 			/[^A-Za-z0-9]/,
 			"Password must contain at least 1 special character.",
 		),
+	// Defaults to the generated student id when an admin omits it.
+	registrationNumber: z
+		.string()
+		.trim()
+		.min(3)
+		.max(30)
+		.regex(/^[A-Za-z0-9][A-Za-z0-9\-_/.]*$/)
+		.transform((value) => value.toUpperCase())
+		.optional(),
 	phone: z.string().trim().min(6).max(20).optional(),
 	dateOfBirth: z.coerce.date().optional(),
 	departmentId: z.uuid(),

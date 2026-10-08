@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 
-import { OfferingStudents } from "@/components/faculty/offering-students";
+import { CourseHome } from "@/features/course/course-home";
 
 export const metadata: Metadata = {
-  title: "Course students",
+  title: "Course",
 };
 
 export default async function OfferingPage({ params }: PageProps<"/faculty/offerings/[id]">) {
   const { id } = await params;
-  return <OfferingStudents id={id} />;
+  return <CourseHome offeringId={id} />;
 }

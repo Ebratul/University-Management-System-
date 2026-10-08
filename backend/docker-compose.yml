@@ -40,6 +40,9 @@ services:
       REDIS_PORT: 6379
       REDIS_USER: ""
       REDIS_PASSWORD: ""
+      # AI quiz generation; RAG_SERVICE_TOKEN comes from .env and must match
+      # rag-service/.env.
+      RAG_SERVICE_URL: http://rag-service:8000
     volumes:
       - ./src:/app/src
       - ./prisma:/app/prisma
@@ -49,5 +52,20 @@ services:
       redis:
         condition: service_healthy
 
+  # Python RAG service that generates quiz questions from course PDFs.
+  # Reads ../rag-service/.env (copy .env.example there first). Not published
+  # to the host: only the API container talks to it.
+  rag-service:
+    build:
+      context: ../rag-service
+    env_file:
+      - path: ../rag-service/.env
+        required: false
+    volumes:
+      - rag_index:/data/index
+    expose:
+      - "8000"
+
 volumes:
   postgres_data:
+  rag_index:

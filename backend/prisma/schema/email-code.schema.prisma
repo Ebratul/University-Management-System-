@@ -1,0 +1,23 @@
+enum EmailCodePurpose {
+  VERIFY_EMAIL
+  RESET_PASSWORD
+}
+
+// A short-lived 6-digit code sent by email. Only a keyed hash is stored, so a
+// database leak does not reveal live codes. One live code per user and purpose.
+model EmailCode {
+  id        String           @id @default(uuid())
+  purpose   EmailCodePurpose
+  codeHash  String
+  attempts  Int              @default(0)
+  expiresAt DateTime
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, purpose])
+  @@index([expiresAt])
+  @@map("email_codes")
+}

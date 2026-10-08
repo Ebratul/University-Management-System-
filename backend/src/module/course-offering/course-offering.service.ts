@@ -6,9 +6,11 @@ import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utils/AppError";
 import { recordAuditLog } from "../../utils/auditLog";
 import { buildMeta, calculatePagination } from "../../utils/paginationHelper";
+import { runSerializable } from "../../utils/withTransaction";
 import {
 	ACTIVE_ENROLLMENT_STATUSES,
 	COURSE_OFFERING_SORTABLE_FIELDS,
+	MAX_ACTIVE_COURSES_PER_FACULTY,
 } from "./course-offering.constant";
 import type {
 	IAssignFacultyPayload,
@@ -18,9 +20,23 @@ import type {
 
 const RELATION_SELECT = {
 	course: {
-		select: { id: true, courseCode: true, title: true, credits: true },
+		select: {
+			id: true,
+			courseCode: true,
+			title: true,
+			credits: true,
+			description: true,
+			department: { select: { id: true, name: true, code: true } },
+		},
 	},
-	faculty: { select: { id: true, facultyId: true, name: true } },
+	faculty: {
+		select: {
+			id: true,
+			facultyId: true,
+			name: true,
+			user: { select: { imageUrl: true } },
+		},
+	},
 	semester: { select: { id: true, code: true, year: true, status: true } },
 } satisfies Prisma.CourseOfferingInclude;
 
@@ -69,6 +85,34 @@ const assertExists = async (
 		throw new AppError(httpStatus.NOT_FOUND, "Semester not found.");
 };
 
+// Enforced here (not in the UI) and inside the caller's serializable
+// transaction, so two concurrent assignments cannot both slip past the limit.
+const assertFacultyHasCapacity = async (
+	tx: Prisma.TransactionClient,
+	facultyId: string,
+	semesterId: string,
+	excludeOfferingId?: string,
+) => {
+	const semester = await tx.semester.findUnique({ where: { id: semesterId } });
+	// Courses in a completed semester are history and do not use up a slot.
+	if (semester?.status === "COMPLETED") return;
+
+	const activeCount = await tx.courseOffering.count({
+		where: {
+			facultyId,
+			deletedAt: null,
+			semester: { status: { not: "COMPLETED" } },
+			...(excludeOfferingId ? { id: { not: excludeOfferingId } } : {}),
+		},
+	});
+	if (activeCount >= MAX_ACTIVE_COURSES_PER_FACULTY) {
+		throw new AppError(
+			httpStatus.CONFLICT,
+			`This faculty has reached the maximum limit of ${MAX_ACTIVE_COURSES_PER_FACULTY} courses.`,
+		);
+	}
+};
+
 const createOffering = async (
 	payload: ICreateCourseOfferingPayload,
 	actor: IActor,
@@ -91,9 +135,12 @@ const createOffering = async (
 		);
 	}
 
-	const offering = await prisma.courseOffering.create({
-		data: payload,
-		include: RELATION_SELECT,
+	const offering = await runSerializable(async (tx) => {
+		await assertFacultyHasCapacity(tx, payload.facultyId, payload.semesterId);
+		return tx.courseOffering.create({
+			data: payload,
+			include: RELATION_SELECT,
+		});
 	});
 
 	await recordAuditLog({
@@ -217,10 +264,20 @@ const assignFaculty = async (
 		);
 	}
 
-	const updated = await prisma.courseOffering.update({
-		where: { id },
-		data: { facultyId: payload.facultyId },
-		include: RELATION_SELECT,
+	const updated = await runSerializable(async (tx) => {
+		if (payload.facultyId !== offering.facultyId) {
+			await assertFacultyHasCapacity(
+				tx,
+				payload.facultyId,
+				offering.semesterId,
+				id,
+			);
+		}
+		return tx.courseOffering.update({
+			where: { id },
+			data: { facultyId: payload.facultyId },
+			include: RELATION_SELECT,
+		});
 	});
 
 	await recordAuditLog({

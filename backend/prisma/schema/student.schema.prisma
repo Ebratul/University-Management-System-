@@ -1,11 +1,14 @@
 model Student {
-  id          String    @id @default(uuid())
-  userId      String    @unique
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  studentId   String    @unique
-  name        String
-  phone       String?
-  dateOfBirth DateTime?
+  id                 String    @id @default(uuid())
+  userId             String    @unique
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  studentId          String    @unique
+  // Institutional registration number, chosen by the student at sign-up.
+  // Unique among live rows via a partial index (see migration).
+  registrationNumber String    @unique
+  name               String
+  phone              String?
+  dateOfBirth        DateTime?
 
   departmentId String
   department   Department @relation(fields: [departmentId], references: [id])
@@ -13,8 +16,10 @@ model Student {
   admissionSemesterId String
   admissionSemester   Semester @relation(fields: [admissionSemesterId], references: [id])
 
-  enrollments Enrollment[]
-  payments    Payment[]
+  enrollments  Enrollment[]
+  payments     Payment[]
+  attendances  Attendance[]
+  quizAttempts QuizAttempt[]
 
   deletedAt DateTime?
   createdAt DateTime  @default(now())

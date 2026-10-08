@@ -10,6 +10,7 @@ import { FormDialog } from "@/components/admin/form-dialog";
 import { FormAlert } from "@/components/forms/form-alert";
 import { SelectInputField, TextInputField } from "@/components/forms/form-fields";
 import { PageHeader } from "@/components/shared/page-header";
+import { PersonAvatar } from "@/components/shared/person-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -74,7 +75,7 @@ export function StudentDetail({ id }: { id: string }) {
       </nav>
 
       <PageHeader
-        eyebrow={s.studentId}
+        eyebrow={`${s.registrationNumber} · ${s.studentId}`}
         title={s.name}
         description={`${s.department.name} · admitted ${s.admissionSemester.code} ${s.admissionSemester.year}`}
         actions={
@@ -84,6 +85,14 @@ export function StudentDetail({ id }: { id: string }) {
           </Button>
         }
       />
+
+      <div className="flex items-center gap-4">
+        <PersonAvatar name={s.name} imageUrl={s.user?.imageUrl} className="size-20" />
+        <div className="text-sm">
+          <p className="text-muted-foreground">Registration number</p>
+          <p className="font-mono text-base font-semibold">{s.registrationNumber}</p>
+        </div>
+      </div>
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card>

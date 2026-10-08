@@ -1,0 +1,26 @@
+// A PDF belonging to exactly one course offering. The file is stored as an
+// authenticated Cloudinary asset, so it is only reachable through a short-lived
+// signed URL that the API issues after checking course membership.
+model CourseMaterial {
+  id       String @id @default(uuid())
+  title    String
+  fileName String
+  fileSize Int
+  mimeType String @default("application/pdf")
+  publicId String
+
+  courseOfferingId String
+  courseOffering   CourseOffering @relation(fields: [courseOfferingId], references: [id])
+
+  uploadedById String
+  uploadedBy   User   @relation(fields: [uploadedById], references: [id])
+
+  quizzes Quiz[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([courseOfferingId])
+  @@index([uploadedById])
+  @@map("course_materials")
+}

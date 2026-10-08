@@ -56,8 +56,11 @@ export type CourseOffering = {
   maxSeats: number;
   enrolledCount: number;
   seatsRemaining: number;
-  course: Pick<Course, "id" | "courseCode" | "title" | "credits">;
-  faculty: Pick<Faculty, "id" | "facultyId" | "name">;
+  course: Pick<Course, "id" | "courseCode" | "title" | "credits"> & {
+    description?: string | null;
+    department?: DepartmentRef;
+  };
+  faculty: Pick<Faculty, "id" | "facultyId" | "name"> & { user?: { imageUrl: string } };
   semester: Pick<Semester, "id" | "code" | "year" | "status">;
   createdAt: string;
   updatedAt: string;
@@ -91,6 +94,7 @@ export type CurrentUser = {
   student: {
     id: string;
     studentId: string;
+    registrationNumber: string;
     name: string;
     phone: string | null;
     dateOfBirth: string | null;
@@ -128,6 +132,8 @@ export type StudentRecord = {
   id: string;
   userId: string;
   studentId: string;
+  registrationNumber: string;
+  user?: { imageUrl: string };
   name: string;
   phone: string | null;
   dateOfBirth: string | null;
@@ -144,7 +150,11 @@ export type Enrollment = {
   studentId: string;
   courseOfferingId: string;
   enrolledAt: string;
-  student: Pick<StudentRecord, "id" | "studentId" | "name"> & { userId: string };
+  student: Pick<StudentRecord, "id" | "studentId" | "name"> & {
+    userId: string;
+    registrationNumber?: string;
+    user?: { imageUrl: string };
+  };
   courseOffering: {
     id: string;
     maxSeats: number;
@@ -209,4 +219,184 @@ export type WebsiteSettings = {
   logoUrl: string | null;
   homepageBackgroundUrl: string | null;
   updatedAt: string;
+};
+
+// ----------------------------- Course home -----------------------------
+
+/** A person shown in a course roster: picture, name and registration number. */
+export type RosterStudent = {
+  id: string;
+  studentId: string;
+  registrationNumber: string;
+  name: string;
+  imageUrl: string;
+};
+
+export type CourseMaterial = {
+  id: string;
+  title: string;
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+  createdAt: string;
+  courseOfferingId: string;
+};
+
+export type AttendanceStatus = "PRESENT" | "ABSENT";
+
+export type AttendanceRoster = {
+  date: string;
+  alreadyMarked: boolean;
+  students: (RosterStudent & { status: AttendanceStatus | null })[];
+};
+
+export type AttendanceTotals = {
+  totalClasses: number;
+  present: number;
+  absent: number;
+  percentage: number;
+};
+
+export type AttendanceSummary = {
+  totalClassDays: number;
+  students: (RosterStudent & AttendanceTotals)[];
+};
+
+export type MyAttendance = AttendanceTotals & {
+  records: { date: string; status: AttendanceStatus }[];
+};
+
+// ------------------------------- Quizzes -------------------------------
+
+export type QuizStatus = "DRAFT" | "UPCOMING" | "ACTIVE" | "ENDED";
+export type QuizChoice = "A" | "B" | "C" | "D";
+export type QuizAttemptStatus = "IN_PROGRESS" | "SUBMITTED" | "AUTO_SUBMITTED";
+
+export type QuizAttemptSummary = {
+  id: string;
+  status: QuizAttemptStatus;
+  score: number | null;
+  totalQuestions: number | null;
+  percentage: number | null;
+  startedAt: string;
+  submittedAt: string | null;
+};
+
+/** Row of GET /course-offerings/:id/quizzes. `myAttempt` is only sent to students. */
+export type QuizListItem = {
+  id: string;
+  title: string;
+  description: string | null;
+  durationMinutes: number;
+  status: QuizStatus;
+  startedAt: string | null;
+  endsAt: string | null;
+  createdAt: string;
+  material: { id: string; title: string } | null;
+  _count: { questions: number; attempts: number };
+  myAttempt?: QuizAttemptSummary | null;
+};
+
+export type QuizList = { serverTime: string; quizzes: QuizListItem[] };
+
+/** A question as the teacher sees it (with the answer key). */
+export type QuizQuestionDraft = {
+  question: string;
+  optionA: string;
+  optionB: string;
+  optionC: string;
+  optionD: string;
+  correctAnswer: QuizChoice;
+  explanation?: string | null;
+  sourceReference?: string | null;
+};
+
+export type QuizQuestionStaff = QuizQuestionDraft & { id: string; order: number };
+
+export type QuizDetail = {
+  id: string;
+  courseOfferingId: string;
+  title: string;
+  description: string | null;
+  durationMinutes: number;
+  status: QuizStatus;
+  startedAt: string | null;
+  endsAt: string | null;
+  showAnswersAfterEnd: boolean;
+  material: { id: string; title: string } | null;
+  questionCount: number;
+  attemptCount: number;
+  serverTime: string;
+  /** Staff only. */
+  questions?: QuizQuestionStaff[];
+  /** Students only. */
+  myAttempt?: QuizAttemptSummary | null;
+};
+
+/** A question as a student sees it while taking the quiz: no answer key. */
+export type QuizQuestionPublic = {
+  id: string;
+  order: number;
+  question: string;
+  optionA: string;
+  optionB: string;
+  optionC: string;
+  optionD: string;
+};
+
+export type QuizAttemptStart = {
+  serverTime: string;
+  quiz: {
+    id: string;
+    title: string;
+    description: string | null;
+    durationMinutes: number;
+    startedAt: string;
+    endsAt: string;
+  };
+  attempt: { id: string; status: QuizAttemptStatus; startedAt: string };
+  questions: QuizQuestionPublic[];
+  answers: Record<string, QuizChoice>;
+};
+
+export type QuizResultReview = QuizQuestionPublic & {
+  correctAnswer: QuizChoice;
+  explanation: string | null;
+  sourceReference: string | null;
+  selectedAnswer: QuizChoice | null;
+  isCorrect: boolean;
+};
+
+export type MyQuizResult = {
+  quizId: string;
+  quizTitle: string;
+  status: QuizAttemptStatus;
+  score: number;
+  totalQuestions: number;
+  correct: number;
+  wrong: number;
+  percentage: number;
+  submittedAt: string | null;
+  quizEnded: boolean;
+  review?: QuizResultReview[];
+};
+
+export type QuizResults = {
+  quiz: { id: string; title: string; status: QuizStatus; endsAt: string | null };
+  summary: { enrolled: number; attempted: number; averagePercentage: number };
+  results: {
+    student: RosterStudent;
+    status: QuizAttemptStatus | "NOT_ATTEMPTED";
+    score: number | null;
+    totalQuestions: number | null;
+    percentage: number | null;
+    submittedAt: string | null;
+  }[];
+};
+
+export type GeneratedQuiz = {
+  materialId: string;
+  requested: number;
+  questions: QuizQuestionDraft[];
+  warnings: string[];
 };

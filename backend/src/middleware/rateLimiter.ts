@@ -54,3 +54,14 @@ export const accountCreationLimiter = rateLimit({
 		"Too many account-creation requests. Please try again later.",
 	),
 });
+
+// AI generation is slow and costs money per call: cap it per client.
+export const aiGenerationLimiter = rateLimit({
+	windowMs: 10 * 60 * 1000,
+	limit: 10,
+	standardHeaders: true,
+	legacyHeaders: false,
+	handler: jsonLimitHandler(
+		"Too many AI generation requests. Please wait a few minutes.",
+	),
+});

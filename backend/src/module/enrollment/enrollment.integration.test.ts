@@ -140,6 +140,7 @@ test("only one of two concurrent enrollments wins the last seat", async () => {
 					student: {
 						create: {
 							studentId: `RACE-STU-${label}-${suffix}`,
+							registrationNumber: `RACE-REG-${label}-${suffix}`,
 							name: `Race Student ${label}`,
 							departmentId: department.id,
 							admissionSemesterId: semester.id,

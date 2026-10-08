@@ -7,6 +7,10 @@ model User {
   imageUrl      String    @default("")
   imagePublicId String    @default("")
   isActive      Boolean   @default(true)
+  // false only for a self-registered account that has not entered its emailed
+  // code yet. Defaults to true so every other way of creating a user (admin
+  // provisioning, Google sign-in, seed) is unaffected.
+  emailVerified Boolean   @default(true)
   deletedAt     DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -16,6 +20,8 @@ model User {
   student       Student?
   refreshTokens RefreshToken[]
   notices       Notice[]
+  materials     CourseMaterial[]
+  emailCodes    EmailCode[]
 
   @@index([role])
   @@index([deletedAt])

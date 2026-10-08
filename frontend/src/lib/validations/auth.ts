@@ -19,6 +19,19 @@ export const loginSchema = z.object({
 
 export type LoginInput = z.infer<typeof loginSchema>;
 
+/** Student picture limits. Mirror the backend (JPG/PNG/WebP, 5 MB). */
+export const PICTURE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+export const MAX_PICTURE_BYTES = 5 * 1024 * 1024;
+
+const pictureSchema = z
+  .custom<File | null>((value) => value instanceof File, { error: "Add your student picture." })
+  .refine((file) => !file || PICTURE_TYPES.includes(file.type), {
+    error: "The picture must be a JPG, PNG or WebP image.",
+  })
+  .refine((file) => !file || file.size <= MAX_PICTURE_BYTES, {
+    error: "The picture must be 5 MB or smaller.",
+  });
+
 const registerBaseSchema = z.object({
   name: z
     .string()
@@ -28,6 +41,15 @@ const registerBaseSchema = z.object({
   email: z.email({ error: "Enter a valid email address." }),
   password: passwordSchema,
   confirmPassword: z.string(),
+  registrationNumber: z
+    .string()
+    .trim()
+    .min(3, { error: "Registration number must be at least 3 characters." })
+    .max(30, { error: "Registration number must be at most 30 characters." })
+    .regex(/^[A-Za-z0-9][A-Za-z0-9\-_/.]*$/, {
+      error: "Use letters, numbers, - _ / and . only.",
+    }),
+  picture: pictureSchema,
   phone: z
     .string()
     .trim()
@@ -50,15 +72,50 @@ export const registerSchema = registerBaseSchema.refine(
 
 export type RegisterFormInput = z.infer<typeof registerSchema>;
 
-/** Converts form values into the body the API expects (empty optionals are omitted). */
+/** Builds the multipart body the API expects (empty optionals are omitted). */
 export function toRegisterPayload(values: RegisterFormInput) {
-  return {
-    name: values.name,
-    email: values.email,
-    password: values.password,
-    departmentId: values.departmentId,
-    admissionSemesterId: values.admissionSemesterId,
-    ...(values.phone ? { phone: values.phone } : {}),
-    ...(values.dateOfBirth ? { dateOfBirth: values.dateOfBirth } : {}),
-  };
+  const body = new FormData();
+  body.append("name", values.name);
+  body.append("email", values.email);
+  body.append("password", values.password);
+  body.append("registrationNumber", values.registrationNumber);
+  body.append("departmentId", values.departmentId);
+  body.append("admissionSemesterId", values.admissionSemesterId);
+  if (values.phone) body.append("phone", values.phone);
+  if (values.dateOfBirth) body.append("dateOfBirth", values.dateOfBirth);
+  if (values.picture) body.append("picture", values.picture);
+  return body;
 }
+
+/** The 6-digit code from the verification / reset email. */
+export const codeSchema = z
+  .string()
+  .trim()
+  .regex(/^\d{6}$/, { error: "Enter the 6-digit code from your email." });
+
+export const verifyEmailSchema = z.object({
+  email: z.email({ error: "Enter a valid email address." }),
+  code: codeSchema,
+});
+export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;
+
+export const forgotPasswordSchema = z.object({
+  email: z.email({ error: "Enter a valid email address." }),
+});
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+
+export const resetPasswordSchema = z
+  .object({
+    email: z.email({ error: "Enter a valid email address." }),
+    code: codeSchema,
+    newPassword: passwordSchema,
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    error: "Passwords do not match.",
+    path: ["confirmPassword"],
+  });
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+
+/** The marker the API puts on the 403 for a correct password on an unverified account. */
+export const EMAIL_NOT_VERIFIED = "EMAIL_NOT_VERIFIED";

@@ -15,12 +15,13 @@ import { useApiMutation } from "@/hooks/use-api-mutation";
 import { authApi } from "@/lib/api/endpoints";
 import { toApiError } from "@/lib/api/errors";
 import { homeForRole } from "@/lib/auth/roles";
-import { loginSchema } from "@/lib/validations/auth";
+import { EMAIL_NOT_VERIFIED, loginSchema } from "@/lib/validations/auth";
 
 export function LoginForm({ next, expired }: { next: string | null; expired: boolean }) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [serverError, setServerError] = useState<string | null>(null);
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
 
   const login = useApiMutation({
@@ -39,10 +40,14 @@ export function LoginForm({ next, expired }: { next: string | null; expired: boo
     validators: { onSubmit: loginSchema },
     onSubmit: async ({ value }) => {
       setServerError(null);
+      setUnverifiedEmail(null);
       try {
         await login.mutateAsync(value);
       } catch (error) {
-        setServerError(toApiError(error).message);
+        const apiError = toApiError(error);
+        setServerError(apiError.message);
+        // Right password, but the email was never confirmed: offer the code screen.
+        if (apiError.errors?.some((e) => e.message === EMAIL_NOT_VERIFIED)) setUnverifiedEmail(value.email.trim());
       }
     },
   });
@@ -67,6 +72,15 @@ export function LoginForm({ next, expired }: { next: string | null; expired: boo
       {serverError ? (
         <div role="alert" className="bg-destructive/10 text-destructive rounded-lg p-3 text-sm">
           {serverError}
+          {unverifiedEmail ? (
+            <>
+              {" "}
+              <Link href={`/verify-email?email=${encodeURIComponent(unverifiedEmail)}`} className="font-semibold underline underline-offset-4">
+                Enter your verification code
+              </Link>
+              .
+            </>
+          ) : null}
         </div>
       ) : null}
 
@@ -105,6 +119,9 @@ export function LoginForm({ next, expired }: { next: string | null; expired: boo
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor={field.name}>Password</Label>
+                <Link href="/forgot-password" className="text-primary text-xs font-medium underline-offset-4 hover:underline">
+                  Forgot password?
+                </Link>
               </div>
               <div className="relative">
                 <Input

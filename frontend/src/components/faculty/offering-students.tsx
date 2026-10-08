@@ -10,6 +10,7 @@ import { FormDialog } from "@/components/admin/form-dialog";
 import { FormAlert } from "@/components/forms/form-alert";
 import { TextInputField } from "@/components/forms/form-fields";
 import { PageHeader } from "@/components/shared/page-header";
+import { PersonAvatar } from "@/components/shared/person-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -26,7 +27,7 @@ import type { CourseOffering, Enrollment, Result } from "@/types/entities";
 type Row = { enrollment: Enrollment; result: Result | undefined };
 
 /** Students in one offering, with grade entry. Publishing a result completes that enrolment. */
-export function OfferingStudents({ id }: { id: string }) {
+export function OfferingStudents({ id, embedded = false }: { id: string; embedded?: boolean }) {
   const [editing, setEditing] = useState<Row | null>(null);
 
   const offering = useApiQuery({
@@ -48,7 +49,19 @@ export function OfferingStudents({ id }: { id: string }) {
     .map((enrollment) => ({ enrollment, result: resultByEnrollment.get(enrollment.id) }));
 
   const columns: Column<Row>[] = [
-    { id: "student", header: "Student", cell: (r) => <div className="min-w-0"><p className="truncate font-medium">{r.enrollment.student.name}</p><p className="text-muted-foreground font-mono text-xs">{r.enrollment.student.studentId}</p></div> },
+    {
+      id: "student",
+      header: "Student",
+      cell: (r) => (
+        <div className="flex min-w-0 items-center gap-3">
+          <PersonAvatar name={r.enrollment.student.name} imageUrl={r.enrollment.student.user?.imageUrl} />
+          <div className="min-w-0">
+            <p className="truncate font-medium">{r.enrollment.student.name}</p>
+            <p className="text-muted-foreground font-mono text-xs">{r.enrollment.student.registrationNumber ?? r.enrollment.student.studentId}</p>
+          </div>
+        </div>
+      ),
+    },
     { id: "status", header: "Enrolment", className: "hidden sm:table-cell", cell: (r) => <Badge variant="secondary">{r.enrollment.status.toLowerCase()}</Badge> },
     {
       id: "grade",
@@ -64,15 +77,19 @@ export function OfferingStudents({ id }: { id: string }) {
 
   return (
     <div className="space-y-6">
-      <nav aria-label="Breadcrumb" className="text-muted-foreground text-sm">
-        <Link href="/faculty/offerings" className="hover:text-foreground underline-offset-4 hover:underline">My offerings</Link>
-      </nav>
+      {embedded ? null : (
+        <>
+          <nav aria-label="Breadcrumb" className="text-muted-foreground text-sm">
+            <Link href="/faculty/offerings" className="hover:text-foreground underline-offset-4 hover:underline">My offerings</Link>
+          </nav>
 
-      <PageHeader
-        eyebrow={offering.data ? `${offering.data.semester.code} ${offering.data.semester.year}` : "Course"}
-        title={offering.data?.course.title ?? "Course offering"}
-        description={offering.data ? `${offering.data.course.courseCode} · ${rows.length} student(s)` : undefined}
-      />
+          <PageHeader
+            eyebrow={offering.data ? `${offering.data.semester.code} ${offering.data.semester.year}` : "Course"}
+            title={offering.data?.course.title ?? "Course offering"}
+            description={offering.data ? `${offering.data.course.courseCode} · ${rows.length} student(s)` : undefined}
+          />
+        </>
+      )}
 
       <DataTable
         caption="Students in this course"

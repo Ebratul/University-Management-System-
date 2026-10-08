@@ -7,6 +7,7 @@ import { DataTable, type Column } from "@/components/admin/data-table";
 import { ListToolbar, useListSearch } from "@/components/admin/list-toolbar";
 import { Pagination } from "@/components/admin/pagination";
 import { PageHeader } from "@/components/shared/page-header";
+import { PersonAvatar } from "@/components/shared/person-avatar";
 import { Badge } from "@/components/ui/badge";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { useDepartmentOptions, useSemesterOptions } from "@/hooks/use-options";
@@ -35,12 +36,16 @@ export function StudentsManager() {
       header: "Name",
       sortKey: "name",
       cell: (s) => (
-        <Link href={`/admin/students/${s.id}`} className="font-medium underline-offset-4 hover:underline">
-          {s.name}
-        </Link>
+        <div className="flex min-w-0 items-center gap-3">
+          <PersonAvatar name={s.name} imageUrl={s.user?.imageUrl} />
+          <Link href={`/admin/students/${s.id}`} className="truncate font-medium underline-offset-4 hover:underline">
+            {s.name}
+          </Link>
+        </div>
       ),
     },
-    { id: "studentId", header: "Student ID", sortKey: "studentId", className: "hidden sm:table-cell", cell: (s) => <span className="font-mono text-xs">{s.studentId}</span> },
+    { id: "registration", header: "Registration no.", className: "hidden sm:table-cell", cell: (s) => <span className="font-mono text-xs">{s.registrationNumber}</span> },
+    { id: "studentId", header: "Student ID", sortKey: "studentId", className: "hidden lg:table-cell", cell: (s) => <span className="font-mono text-xs">{s.studentId}</span> },
     { id: "department", header: "Department", className: "hidden md:table-cell", cell: (s) => <span>{s.department.name}</span> },
     { id: "admission", header: "Admitted", className: "hidden lg:table-cell", cell: (s) => <Badge variant="outline">{s.admissionSemester.code} {s.admissionSemester.year}</Badge> },
   ];

@@ -1,8 +1,9 @@
 model Course {
-  id         String @id @default(uuid())
-  courseCode String @unique
-  title      String
-  credits    Int
+  id          String  @id @default(uuid())
+  courseCode  String  @unique
+  title       String
+  credits     Int
+  description String?
 
   departmentId String
   department   Department @relation(fields: [departmentId], references: [id])

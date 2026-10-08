@@ -13,13 +13,59 @@ const readToken = (
 ): string | undefined => req.cookies?.[cookieName] ?? req.body?.refreshToken;
 
 const register = catchAsync(async (req: Request, res: Response) => {
-	const result = await AuthService.register(req.body);
-	setAuthCookies(res, result);
+	// No auth cookies here: the account is unverified until the emailed code is entered.
+	const result = await AuthService.register(req.body, req.file);
 	sendResponse(res, {
 		statusCode: httpStatus.CREATED,
 		success: true,
-		message: "Registered successfully.",
+		message: result.emailSent
+			? "Account created. We emailed you a verification code."
+			: "Account created, but the verification email could not be sent. Use “Resend code”.",
 		data: result,
+	});
+});
+
+const verifyEmail = catchAsync(async (req: Request, res: Response) => {
+	const result = await AuthService.verifyEmail(req.body);
+	setAuthCookies(res, result);
+	sendResponse(res, {
+		statusCode: httpStatus.OK,
+		success: true,
+		message: "Email verified. You are now signed in.",
+		data: result,
+	});
+});
+
+const GENERIC_CODE_SENT =
+	"If an account exists for that email, we have sent a code to it.";
+
+const resendVerification = catchAsync(async (req: Request, res: Response) => {
+	await AuthService.resendVerification(req.body);
+	sendResponse(res, {
+		statusCode: httpStatus.OK,
+		success: true,
+		message: GENERIC_CODE_SENT,
+		data: null,
+	});
+});
+
+const forgotPassword = catchAsync(async (req: Request, res: Response) => {
+	await AuthService.forgotPassword(req.body);
+	sendResponse(res, {
+		statusCode: httpStatus.OK,
+		success: true,
+		message: GENERIC_CODE_SENT,
+		data: null,
+	});
+});
+
+const resetPassword = catchAsync(async (req: Request, res: Response) => {
+	await AuthService.resetPassword(req.body);
+	sendResponse(res, {
+		statusCode: httpStatus.OK,
+		success: true,
+		message: "Password updated. Please log in with your new password.",
+		data: null,
 	});
 });
 
@@ -75,6 +121,10 @@ const googleLogin = catchAsync(async (req: Request, res: Response) => {
 
 export const AuthController = {
 	register,
+	verifyEmail,
+	resendVerification,
+	forgotPassword,
+	resetPassword,
 	login,
 	refreshToken,
 	logout,

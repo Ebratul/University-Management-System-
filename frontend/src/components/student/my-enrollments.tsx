@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { ClipboardList } from "lucide-react";
 
 import { DataTable, type Column } from "@/components/admin/data-table";
@@ -19,7 +20,26 @@ export function MyEnrollments() {
   });
 
   const columns: Column<Enrollment>[] = [
-    { id: "course", header: "Course", cell: (e) => <div className="min-w-0"><p className="truncate font-medium">{e.courseOffering.course.title}</p><p className="text-muted-foreground font-mono text-xs">{e.courseOffering.course.courseCode}</p></div> },
+    {
+      id: "course",
+      header: "Course",
+      cell: (e) => {
+        const title = <p className="truncate font-medium">{e.courseOffering.course.title}</p>;
+        return (
+          <div className="min-w-0">
+            {/* Only confirmed enrolments have a course space to open. */}
+            {e.status === "ENROLLED" || e.status === "COMPLETED" ? (
+              <Link href={`/student/offerings/${e.courseOffering.id}`} className="underline-offset-4 hover:underline">
+                {title}
+              </Link>
+            ) : (
+              title
+            )}
+            <p className="text-muted-foreground font-mono text-xs">{e.courseOffering.course.courseCode}</p>
+          </div>
+        );
+      },
+    },
     { id: "credits", header: "Credits", className: "hidden sm:table-cell", cell: (e) => <span className="tabular-nums">{e.courseOffering.course.credits}</span> },
     { id: "semester", header: "Semester", className: "hidden md:table-cell", cell: (e) => <span>{e.courseOffering.semester ? `${e.courseOffering.semester.code} ${e.courseOffering.semester.year}` : "—"}</span> },
     { id: "status", header: "Status", cell: (e) => <Badge variant={e.status === "ENROLLED" ? "default" : e.status === "DROPPED" ? "destructive" : "secondary"}>{label[e.status]}</Badge> },

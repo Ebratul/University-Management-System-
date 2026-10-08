@@ -16,6 +16,16 @@ const RegisterZodSchema = z.object({
 		.max(100),
 	email: z.email("Invalid email address."),
 	password: passwordSchema,
+	registrationNumber: z
+		.string("Registration number is required.")
+		.trim()
+		.min(3, "Registration number must be at least 3 characters long.")
+		.max(30, "Registration number must be at most 30 characters long.")
+		.regex(
+			/^[A-Za-z0-9][A-Za-z0-9\-_/.]*$/,
+			"Registration number may only contain letters, numbers, - _ / and .",
+		)
+		.transform((value) => value.toUpperCase()),
 	phone: z.string().trim().min(6).max(20).optional(),
 	dateOfBirth: z.coerce.date().optional(),
 	departmentId: z.uuid("Invalid department id."),
@@ -39,7 +49,30 @@ const GoogleLoginZodSchema = z.object({
 	idToken: z.string().min(10, "A valid Google idToken is required."),
 });
 
+const codeSchema = z
+	.string()
+	.trim()
+	.regex(/^\d{6}$/, "Enter the 6-digit code from your email.");
+
+const VerifyEmailZodSchema = z.object({
+	email: z.email("Invalid email address."),
+	code: codeSchema,
+});
+
+const EmailOnlyZodSchema = z.object({
+	email: z.email("Invalid email address."),
+});
+
+const ResetPasswordZodSchema = z.object({
+	email: z.email("Invalid email address."),
+	code: codeSchema,
+	newPassword: passwordSchema,
+});
+
 export const AuthValidation = {
+	VerifyEmailZodSchema,
+	EmailOnlyZodSchema,
+	ResetPasswordZodSchema,
 	RegisterZodSchema,
 	LoginZodSchema,
 	RefreshTokenZodSchema,

@@ -1,0 +1,92 @@
+// A quiz belongs to exactly one course offering. Times are decided by the
+// server: endsAt = startedAt + durationMinutes, set when the teacher starts it.
+model Quiz {
+  id                  String     @id @default(uuid())
+  title               String
+  description         String?
+  durationMinutes     Int
+  status              QuizStatus @default(DRAFT)
+  startedAt           DateTime?
+  endsAt              DateTime?
+  showAnswersAfterEnd Boolean    @default(true)
+
+  courseOfferingId String
+  courseOffering   CourseOffering @relation(fields: [courseOfferingId], references: [id])
+
+  // Source PDF the questions were generated from (optional, manual quizzes have none).
+  materialId String?
+  material   CourseMaterial? @relation(fields: [materialId], references: [id], onDelete: SetNull)
+
+  createdByUserId String
+
+  questions QuizQuestion[]
+  attempts  QuizAttempt[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([courseOfferingId, status])
+  @@index([materialId])
+  @@index([status, endsAt])
+  @@map("quizzes")
+}
+
+model QuizQuestion {
+  id              String     @id @default(uuid())
+  order           Int
+  question        String
+  optionA         String
+  optionB         String
+  optionC         String
+  optionD         String
+  correctAnswer   QuizChoice
+  explanation     String?
+  sourceReference String?
+
+  quizId String
+  quiz   Quiz   @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  answers QuizAnswer[]
+
+  @@index([quizId, order])
+  @@map("quiz_questions")
+}
+
+// One attempt per student per quiz.
+model QuizAttempt {
+  id             String            @id @default(uuid())
+  status         QuizAttemptStatus @default(IN_PROGRESS)
+  startedAt      DateTime          @default(now())
+  submittedAt    DateTime?
+  score          Int?
+  totalQuestions Int?
+  percentage     Float?
+
+  quizId String
+  quiz   Quiz   @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id])
+
+  answers QuizAnswer[]
+
+  @@unique([quizId, studentId])
+  @@index([studentId])
+  @@map("quiz_attempts")
+}
+
+model QuizAnswer {
+  id             String     @id @default(uuid())
+  selectedAnswer QuizChoice
+  isCorrect      Boolean?
+
+  attemptId String
+  attempt   QuizAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  questionId String
+  question   QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([attemptId, questionId])
+  @@index([questionId])
+  @@map("quiz_answers")
+}

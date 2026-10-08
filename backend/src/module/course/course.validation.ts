@@ -9,6 +9,7 @@ const CreateZodSchema = z.object({
 		.transform((value) => value.toUpperCase()),
 	title: z.string().trim().min(2).max(150),
 	credits: z.number().int().min(1).max(10),
+	description: z.string().trim().max(2000).optional(),
 	departmentId: z.uuid(),
 });
 
@@ -22,6 +23,7 @@ const UpdateZodSchema = z.object({
 		.optional(),
 	title: z.string().trim().min(2).max(150).optional(),
 	credits: z.number().int().min(1).max(10).optional(),
+	description: z.string().trim().max(2000).optional(),
 	departmentId: z.uuid().optional(),
 });
 

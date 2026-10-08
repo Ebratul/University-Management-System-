@@ -19,7 +19,16 @@ import type {
 } from "./enrollment.interface";
 
 const RELATION_SELECT = {
-	student: { select: { id: true, studentId: true, name: true, userId: true } },
+	student: {
+		select: {
+			id: true,
+			studentId: true,
+			registrationNumber: true,
+			name: true,
+			userId: true,
+			user: { select: { imageUrl: true } },
+		},
+	},
 	courseOffering: {
 		select: {
 			id: true,

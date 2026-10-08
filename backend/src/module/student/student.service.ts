@@ -19,6 +19,7 @@ import type {
 const RELATION_SELECT = {
 	department: { select: { id: true, name: true, code: true } },
 	admissionSemester: { select: { id: true, code: true, year: true } },
+	user: { select: { imageUrl: true } },
 } satisfies Prisma.StudentInclude;
 
 const assertDepartmentExists = async (departmentId: string) => {
@@ -61,6 +62,18 @@ const createStudent = async (payload: ICreateStudentPayload, actor: IActor) => {
 		Number(config.bcrypt_salt_rounds),
 	);
 	const studentId = generateSequenceId("STU", semester.year);
+	const registrationNumber = payload.registrationNumber ?? studentId;
+
+	const duplicateRegistration = await prisma.student.findFirst({
+		where: { registrationNumber, deletedAt: null },
+		select: { id: true },
+	});
+	if (duplicateRegistration) {
+		throw new AppError(
+			httpStatus.CONFLICT,
+			"This registration number is already registered.",
+		);
+	}
 
 	const user = await prisma.user.create({
 		data: {
@@ -70,6 +83,7 @@ const createStudent = async (payload: ICreateStudentPayload, actor: IActor) => {
 			student: {
 				create: {
 					studentId,
+					registrationNumber,
 					name: payload.name,
 					phone: payload.phone,
 					dateOfBirth: payload.dateOfBirth,
@@ -117,6 +131,12 @@ const getStudents = async (
 			OR: [
 				{ name: { contains: query.searchTerm, mode: "insensitive" } },
 				{ studentId: { contains: query.searchTerm, mode: "insensitive" } },
+				{
+					registrationNumber: {
+						contains: query.searchTerm,
+						mode: "insensitive",
+					},
+				},
 			],
 		});
 	}

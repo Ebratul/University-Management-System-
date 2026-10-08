@@ -188,6 +188,7 @@ export const seedTesterStudent = async () => {
 			student: {
 				create: {
 					studentId: "STU-TEST-001",
+					registrationNumber: "REG-TEST-001",
 					name,
 					department: { connect: { id: department.id } },
 					admissionSemester: { connect: { id: semester.id } },

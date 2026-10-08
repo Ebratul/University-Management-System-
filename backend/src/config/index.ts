@@ -38,6 +38,23 @@ export default {
 	cloudinary_api_key: process.env.CLOUDINARY_API_KEY ?? "",
 	cloudinary_api_secret: process.env.CLOUDINARY_API_SECRET ?? "",
 
+	// Internal Python RAG service (rag-service/). Empty url = AI generation disabled.
+	rag_service_url: (process.env.RAG_SERVICE_URL ?? "").replace(/\/$/, ""),
+	rag_service_token: process.env.RAG_SERVICE_TOKEN ?? "",
+	rag_service_timeout_ms: Number(process.env.RAG_SERVICE_TIMEOUT_MS ?? 120000),
+
+	// Outgoing email (verification and password-reset codes). With no SMTP_HOST,
+	// development prints the email to the console; production refuses to send.
+	smtp_host: process.env.SMTP_HOST ?? "",
+	smtp_port: Number(process.env.SMTP_PORT ?? 587),
+	// Implicit TLS (port 465) when true; STARTTLS on 587 when false.
+	smtp_secure: (process.env.SMTP_SECURE ?? "").toLowerCase() === "true",
+	smtp_user: process.env.SMTP_USER ?? "",
+	smtp_pass: process.env.SMTP_PASS ?? "",
+	mail_from:
+		process.env.MAIL_FROM ??
+		"University Management System <no-reply@localhost>",
+
 	google_client_id: process.env.GOOGLE_CLIENT_ID ?? "",
 
 	super_admin: {
