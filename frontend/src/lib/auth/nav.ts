@@ -10,6 +10,7 @@ export const ADMIN_NAV: AppNavItem[] = [
   { label: "Courses", href: "/admin/courses", roles: ["ADMIN"] },
   { label: "Faculty", href: "/admin/faculties", roles: ["ADMIN"] },
   { label: "Offerings", href: "/admin/offerings", roles: ["ADMIN"] },
+  { label: "Registration", href: "/admin/registration", roles: ["ADMIN"] },
   { label: "Users", href: "/admin/users", roles: ["ADMIN"] },
   { label: "Students", href: "/admin/students", roles: ["ADMIN"] },
   { label: "Enrolments", href: "/admin/enrollments", roles: ["ADMIN"] },
@@ -23,6 +24,8 @@ export const ADMIN_NAV: AppNavItem[] = [
 export const STUDENT_NAV: AppNavItem[] = [
   { label: "Overview", href: "/student", roles: ["STUDENT"] },
   { label: "Courses", href: "/student/courses", roles: ["STUDENT"] },
+  { label: "Registration", href: "/student/registration", roles: ["STUDENT"] },
+  { label: "My registrations", href: "/student/registrations", roles: ["STUDENT"] },
   { label: "My enrolments", href: "/student/enrollments", roles: ["STUDENT"] },
   { label: "Results", href: "/student/results", roles: ["STUDENT"] },
   { label: "Payments", href: "/student/payments", roles: ["STUDENT"] },

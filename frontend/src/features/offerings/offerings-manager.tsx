@@ -23,7 +23,7 @@ import { apiListRequest, apiRequest } from "@/lib/api/client";
 import { toApiError } from "@/lib/api/errors";
 import { queryKeys } from "@/lib/api/query-keys";
 import { summariseApiError } from "@/lib/forms/server-errors";
-import { offeringCreateSchema, offeringUpdateSchema, type OfferingCreateInput, type OfferingUpdateInput } from "@/lib/validations/admin";
+import { offeringCreateSchema, offeringUpdateSchema, ordinal, SEMESTER_LEVELS, type OfferingCreateInput, type OfferingUpdateInput } from "@/lib/validations/admin";
 import type { CourseOffering } from "@/types/entities";
 
 const FILTER_KEYS = ["semesterId"];
@@ -67,6 +67,20 @@ export function OfferingsManager() {
       cell: (o) => <span>{o.semester.code} {o.semester.year}</span>,
     },
     { id: "faculty", header: "Faculty", className: "hidden lg:table-cell", cell: (o) => <span className="text-muted-foreground">{o.faculty.name}</span> },
+    {
+      id: "level",
+      header: "For",
+      className: "hidden xl:table-cell",
+      cell: (o) => <span className="text-muted-foreground text-sm">{o.semesterLevel ? `${ordinal(o.semesterLevel)} semester` : "All levels"}</span>,
+    },
+    {
+      id: "registration",
+      header: "Registration",
+      className: "hidden md:table-cell",
+      cell: (o) => (
+        <Badge variant={o.registrationEnabled === false ? "outline" : "secondary"}>{o.registrationEnabled === false ? "Closed" : "Open"}</Badge>
+      ),
+    },
     {
       id: "seats",
       header: "Seats",
@@ -173,6 +187,8 @@ function OfferingCreateForm({ onDone }: { onDone: () => void }) {
           facultyId: values.facultyId,
           semesterId: values.semesterId,
           ...(values.maxSeats.trim() ? { maxSeats: Number(values.maxSeats) } : {}),
+          semesterLevel: toLevel(values.semesterLevel),
+          registrationEnabled: values.registrationEnabled,
         },
       }),
     notifyError: false,
@@ -181,7 +197,7 @@ function OfferingCreateForm({ onDone }: { onDone: () => void }) {
   });
 
   const form = useForm({
-    defaultValues: { courseId: "", facultyId: "", semesterId: "", maxSeats: "" },
+    defaultValues: { courseId: "", facultyId: "", semesterId: "", maxSeats: "", semesterLevel: "all", registrationEnabled: true },
     validators: { onSubmit: offeringCreateSchema },
     onSubmit: async ({ value }) => {
       setServerError(null);
@@ -201,6 +217,10 @@ function OfferingCreateForm({ onDone }: { onDone: () => void }) {
       <form.Field name="semesterId">{(field) => <SelectInputField field={field} label="Semester" placeholder={semesters.isLoading ? "Loading semesters…" : "Choose a semester"} options={semesters.options} disabled={semesters.isLoading} />}</form.Field>
       <form.Field name="facultyId">{(field) => <SelectInputField field={field} label="Teaching faculty" placeholder={faculties.isLoading ? "Loading faculty…" : "Choose a faculty member"} options={faculties.options} disabled={faculties.isLoading} />}</form.Field>
       <form.Field name="maxSeats">{(field) => <TextInputField field={field} label="Seats (optional)" inputMode="numeric" placeholder="40" hint="Leave blank for the default of 40." />}</form.Field>
+      <form.Field name="semesterLevel">
+        {(field) => <SelectInputField field={field} label="Offered to" placeholder="Choose a semester level" options={LEVEL_OPTIONS} hint="Students see it only when they are in this semester level of the course's department." />}
+      </form.Field>
+      <form.Field name="registrationEnabled">{(field) => <RegistrationSwitch checked={field.state.value} onChange={field.handleChange} />}</form.Field>
       <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting] as const}>
         {([canSubmit, isSubmitting]) => (
           <div className="flex justify-end gap-2 pt-2">
@@ -223,7 +243,11 @@ function OfferingEditForm({ item, onDone }: { item: CourseOffering; onDone: () =
     mutationFn: async (values) => {
       const updated = await apiRequest<CourseOffering>(`/course-offerings/${item.id}`, {
         method: "PATCH",
-        body: { maxSeats: Number(values.maxSeats) },
+        body: {
+          maxSeats: Number(values.maxSeats),
+          semesterLevel: toLevel(values.semesterLevel),
+          registrationEnabled: values.registrationEnabled,
+        },
       });
       if (values.facultyId !== item.faculty.id) {
         await apiRequest(`/course-offerings/${item.id}/assign-faculty`, { method: "POST", body: { facultyId: values.facultyId } });
@@ -236,7 +260,12 @@ function OfferingEditForm({ item, onDone }: { item: CourseOffering; onDone: () =
   });
 
   const form = useForm({
-    defaultValues: { maxSeats: String(item.maxSeats), facultyId: item.faculty.id },
+    defaultValues: {
+      maxSeats: String(item.maxSeats),
+      facultyId: item.faculty.id,
+      semesterLevel: item.semesterLevel ? String(item.semesterLevel) : "all",
+      registrationEnabled: item.registrationEnabled !== false,
+    },
     validators: { onSubmit: offeringUpdateSchema },
     onSubmit: async ({ value }) => {
       setServerError(null);
@@ -257,6 +286,10 @@ function OfferingEditForm({ item, onDone }: { item: CourseOffering; onDone: () =
       </p>
       <form.Field name="maxSeats">{(field) => <TextInputField field={field} label="Seats" inputMode="numeric" />}</form.Field>
       <form.Field name="facultyId">{(field) => <SelectInputField field={field} label="Teaching faculty" placeholder="Choose a faculty member" options={faculties.options} disabled={faculties.isLoading} />}</form.Field>
+      <form.Field name="semesterLevel">
+        {(field) => <SelectInputField field={field} label="Offered to" placeholder="Choose a semester level" options={LEVEL_OPTIONS} />}
+      </form.Field>
+      <form.Field name="registrationEnabled">{(field) => <RegistrationSwitch checked={field.state.value} onChange={field.handleChange} />}</form.Field>
       <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting] as const}>
         {([canSubmit, isSubmitting]) => (
           <div className="flex justify-end gap-2 pt-2">
@@ -270,3 +303,23 @@ function OfferingEditForm({ item, onDone }: { item: CourseOffering; onDone: () =
     </form>
   );
 }
+
+const LEVEL_OPTIONS = [
+  { value: "all", label: "All levels" },
+  ...SEMESTER_LEVELS.map((level) => ({ value: level, label: `${ordinal(Number(level))} semester` })),
+];
+
+/** "Open for course registration" switch. Closed offerings are hidden from students. */
+function RegistrationSwitch({ checked, onChange }: { checked: boolean; onChange: (value: boolean) => void }) {
+  return (
+    <label className="flex items-start gap-3 text-sm">
+      <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} className="mt-0.5 size-4" />
+      <span>
+        <span className="font-medium">Open for course registration</span>
+        <span className="text-muted-foreground block text-xs">Students of the right department and semester level can pick it. Turn off to hide it without deleting.</span>
+      </span>
+    </label>
+  );
+}
+
+const toLevel = (value: string) => (value === "all" ? null : Number(value));

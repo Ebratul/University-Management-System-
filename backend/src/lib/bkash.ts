@@ -164,34 +164,59 @@ export interface IBkashCreatePaymentResult {
 	bkashURL: string;
 }
 
-export const createBkashPayment = async (params: {
-	amount: number;
-	invoiceNumber: string;
-}): Promise<IBkashCreatePaymentResult> =>
-	authorizedFetch("/tokenized/checkout/create", {
-		mode: "0011",
-		payerReference: params.invoiceNumber,
-		callbackURL: config.bkash_callback_url,
-		amount: params.amount.toFixed(2),
-		currency: "BDT",
-		intent: "sale",
-		merchantInvoiceNumber: params.invoiceNumber,
-	});
-
 export interface IBkashExecutePaymentResult {
 	paymentID: string;
 	trxID: string;
 	transactionStatus: string;
 	statusCode: string;
 	statusMessage: string;
+	// bKash echoes these back; callers use them to cross-check what was charged.
+	amount?: string;
+	currency?: string;
+	merchantInvoiceNumber?: string;
 }
 
-export const executeBkashPayment = async (
-	paymentID: string,
-): Promise<IBkashExecutePaymentResult> =>
-	authorizedFetch("/tokenized/checkout/execute", { paymentID });
+type TBkashGateway = {
+	create: (params: {
+		amount: number;
+		invoiceNumber: string;
+	}) => Promise<IBkashCreatePaymentResult>;
+	execute: (paymentID: string) => Promise<IBkashExecutePaymentResult>;
+	query: (paymentID: string) => Promise<IBkashExecutePaymentResult>;
+};
 
-export const queryBkashPayment = async (
+const liveGateway: TBkashGateway = {
+	create: (params) =>
+		authorizedFetch("/tokenized/checkout/create", {
+			mode: "0011",
+			payerReference: params.invoiceNumber,
+			callbackURL: config.bkash_callback_url,
+			amount: params.amount.toFixed(2),
+			currency: "BDT",
+			intent: "sale",
+			merchantInvoiceNumber: params.invoiceNumber,
+		}),
+	execute: (paymentID) =>
+		authorizedFetch("/tokenized/checkout/execute", { paymentID }),
+	query: (paymentID) =>
+		authorizedFetch("/tokenized/checkout/payment/status", { paymentID }),
+};
+
+// Tests swap the gateway so payment flows can run without calling bKash.
+let gateway: TBkashGateway = liveGateway;
+export const setBkashGatewayForTests = (stub: TBkashGateway | null) => {
+	gateway = stub ?? liveGateway;
+};
+
+export const createBkashPayment = (params: {
+	amount: number;
+	invoiceNumber: string;
+}): Promise<IBkashCreatePaymentResult> => gateway.create(params);
+
+export const executeBkashPayment = (
 	paymentID: string,
-): Promise<IBkashExecutePaymentResult> =>
-	authorizedFetch("/tokenized/checkout/payment/status", { paymentID });
+): Promise<IBkashExecutePaymentResult> => gateway.execute(paymentID);
+
+export const queryBkashPayment = (
+	paymentID: string,
+): Promise<IBkashExecutePaymentResult> => gateway.query(paymentID);

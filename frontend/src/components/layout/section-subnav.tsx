@@ -15,7 +15,7 @@ export function SectionSubnav({ items, label, root }: { items: SubnavItem[]; lab
   const pathname = usePathname();
 
   return (
-    <nav aria-label={label} className="-mx-4 overflow-x-auto px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+    <nav aria-label={label} className="-mx-4 overflow-x-auto px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 print:hidden">
       <ul className="flex w-max gap-1 border-b pb-px">
         {items.map((item) => {
           const active = item.href === root ? pathname === root : pathname === item.href || pathname.startsWith(`${item.href}/`);

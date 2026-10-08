@@ -29,6 +29,8 @@ const handleCallback = catchAsync(async (req: Request, res: Response) => {
 	// bKash sends the payer's browser here. When a frontend is configured, send
 	// the browser on to the result page, which polls the payment's real status.
 	if (config.frontend_url && result) {
+		// Every bKash payment (tuition or course registration) lands on the
+		// student's Payments result page, which shows what happened to it.
 		const target = new URL("/student/payments/result", config.frontend_url);
 		target.searchParams.set("paymentId", result.id);
 		return res.redirect(target.toString());

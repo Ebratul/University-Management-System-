@@ -20,6 +20,21 @@ describe("toApiError", () => {
     expect(mapped.errors).toEqual([{ path: "email", message: "Invalid email address." }]);
   });
 
+  it("says so plainly when the server never answers (timeout)", () => {
+    const timeout = Object.assign(new Error("[POST] /ai/quiz/generate: <no response> The operation was aborted due to timeout"), {
+      statusCode: undefined,
+      data: undefined,
+    });
+    const mapped = toApiError(timeout);
+    expect(mapped.status).toBe(504);
+    expect(mapped.message).toMatch(/did not answer in time/);
+  });
+
+  it("keeps the generic message for an error response that has no readable body", () => {
+    const bare = Object.assign(new Error("Bad Gateway"), { statusCode: 502, data: undefined });
+    expect(toApiError(bare).message).toBe("The request could not be completed.");
+  });
+
   it("reports a network failure as status 0", () => {
     expect(toApiError(new TypeError("Failed to fetch")).status).toBe(0);
   });

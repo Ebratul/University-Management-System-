@@ -14,6 +14,10 @@ model Semester {
   paymentsForSem   Payment[]
   studentsAdmitted Student[]
 
+  registrationSetting  RegistrationSetting?
+  registrations        CourseRegistration[]
+  registrationInvoices RegistrationInvoice[]
+
   deletedAt DateTime?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt

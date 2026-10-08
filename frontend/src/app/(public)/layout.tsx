@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SkipLink } from "@/components/layout/skip-link";
-import { SPLASH_SKIP_SCRIPT } from "@/components/website/splash-config";
 import { SplashScreen } from "@/components/website/splash-screen";
 import { WebsiteSettingsSeed } from "@/components/website/settings-provider";
 import { getWebsiteSettings } from "@/lib/api/public-data";
@@ -14,7 +13,6 @@ export default async function PublicLayout({ children }: { children: ReactNode }
 
   return (
     <WebsiteSettingsSeed settings={settings}>
-      <script dangerouslySetInnerHTML={{ __html: SPLASH_SKIP_SCRIPT }} />
       <SplashScreen />
       <SkipLink />
       <SiteHeader />

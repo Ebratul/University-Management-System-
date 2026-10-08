@@ -25,8 +25,51 @@ const assertDepartmentExists = async (departmentId: string) => {
 	}
 };
 
+// A prerequisite must be a live course, never the course itself, and must not
+// lead back to it (A needs B needs A would make both impossible to register).
+const assertValidPrerequisite = async (
+	prerequisiteId: string,
+	courseId?: string,
+) => {
+	if (courseId && prerequisiteId === courseId) {
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
+			"A course cannot be its own prerequisite.",
+		);
+	}
+	let currentId: string | null = prerequisiteId;
+	for (let depth = 0; currentId && depth < 20; depth++) {
+		const current: { id: string; prerequisiteId: string | null } | null =
+			await prisma.course.findFirst({
+				where: { id: currentId, deletedAt: null },
+				select: { id: true, prerequisiteId: true },
+			});
+		if (!current) {
+			throw new AppError(
+				httpStatus.NOT_FOUND,
+				"Prerequisite course not found.",
+			);
+		}
+		if (courseId && current.prerequisiteId === courseId) {
+			throw new AppError(
+				httpStatus.BAD_REQUEST,
+				"That prerequisite would create a loop (it already depends on this course).",
+			);
+		}
+		currentId = current.prerequisiteId;
+	}
+};
+
+const WITH_RELATIONS = {
+	department: { select: { id: true, name: true, code: true } },
+	prerequisite: { select: { id: true, courseCode: true, title: true } },
+} as const;
+
 const createCourse = async (payload: ICreateCoursePayload, actor: IActor) => {
 	await assertDepartmentExists(payload.departmentId);
+	if (payload.prerequisiteId) {
+		await assertValidPrerequisite(payload.prerequisiteId);
+	}
 
 	const existing = await prisma.course.findFirst({
 		where: { courseCode: payload.courseCode, deletedAt: null },
@@ -38,7 +81,10 @@ const createCourse = async (payload: ICreateCoursePayload, actor: IActor) => {
 		);
 	}
 
-	const course = await prisma.course.create({ data: payload });
+	const course = await prisma.course.create({
+		data: payload,
+		include: WITH_RELATIONS,
+	});
 	await cacheInvalidateByPrefix(CACHE_PREFIX);
 	await recordAuditLog({
 		action: "COURSE_CREATED",
@@ -80,7 +126,7 @@ const getCourses = async (query: IQuery & { departmentId?: string }) => {
 	const [data, total] = await Promise.all([
 		prisma.course.findMany({
 			where,
-			include: { department: { select: { id: true, name: true, code: true } } },
+			include: WITH_RELATIONS,
 			skip,
 			take: limit,
 			orderBy: { [sortBy]: sortOrder },
@@ -96,7 +142,7 @@ const getCourses = async (query: IQuery & { departmentId?: string }) => {
 const getCourseById = async (id: string) => {
 	const course = await prisma.course.findFirst({
 		where: { id, deletedAt: null },
-		include: { department: { select: { id: true, name: true, code: true } } },
+		include: WITH_RELATIONS,
 	});
 	if (!course) {
 		throw new AppError(httpStatus.NOT_FOUND, "Course not found.");
@@ -113,6 +159,9 @@ const updateCourse = async (
 
 	if (payload.departmentId) {
 		await assertDepartmentExists(payload.departmentId);
+	}
+	if (payload.prerequisiteId) {
+		await assertValidPrerequisite(payload.prerequisiteId, id);
 	}
 
 	if (payload.courseCode) {
@@ -131,7 +180,11 @@ const updateCourse = async (
 		}
 	}
 
-	const updated = await prisma.course.update({ where: { id }, data: payload });
+	const updated = await prisma.course.update({
+		where: { id },
+		data: payload,
+		include: WITH_RELATIONS,
+	});
 	await cacheInvalidateByPrefix(CACHE_PREFIX);
 	await recordAuditLog({
 		action: "COURSE_UPDATED",

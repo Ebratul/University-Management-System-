@@ -84,6 +84,7 @@ const createStudent = async (payload: ICreateStudentPayload, actor: IActor) => {
 				create: {
 					studentId,
 					registrationNumber,
+					currentSemesterLevel: payload.currentSemesterLevel,
 					name: payload.name,
 					phone: payload.phone,
 					dateOfBirth: payload.dateOfBirth,

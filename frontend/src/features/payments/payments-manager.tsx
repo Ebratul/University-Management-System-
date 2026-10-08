@@ -44,7 +44,16 @@ export function PaymentsManager() {
         </Link>
       ),
     },
-    { id: "semester", header: "Semester", cell: (p) => <span>{p.semester.code} {p.semester.year}</span> },
+    {
+      id: "semester",
+      header: "Semester",
+      cell: (p) => (
+        <div>
+          <span>{p.semester.code} {p.semester.year}</span>
+          <span className="text-muted-foreground block text-xs">{p.registrationInvoice ? `Course registration · ${p.registrationInvoice.invoiceNo}` : "Tuition"}</span>
+        </div>
+      ),
+    },
     { id: "amount", header: "Amount", sortKey: "amount", cell: (p) => <span className="tabular-nums">{money.format(p.amount)}</span> },
     { id: "status", header: "Status", cell: (p) => paymentBadge(p.status) },
     { id: "date", header: "Date", className: "hidden md:table-cell", cell: (p) => <span className="text-muted-foreground">{formatDate(p.createdAt)}</span> },

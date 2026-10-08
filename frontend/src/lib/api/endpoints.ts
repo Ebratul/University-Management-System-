@@ -18,10 +18,20 @@ import type {
   QuizQuestionDraft,
   QuizResults,
   Semester,
+  Registration,
+  RegistrationPreview,
+  RegistrationReceipt,
+  RegistrationSettingRow,
+  RegistrationSettingValues,
+  RegistrationStats,
+  AvailableCourses,
   WebsiteSettings,
 } from "@/types/entities";
 
 import { apiListRequest, apiRequest } from "./client";
+
+/** Must stay below next.config.ts experimental.proxyTimeout and the API's RAG_SERVICE_TIMEOUT_MS. */
+const AI_REQUEST_TIMEOUT_MS = 150_000;
 
 /** Typed client-side calls. Components import these instead of building URLs. */
 /**
@@ -219,5 +229,45 @@ export const aiApi = {
     materialId: string;
     numberOfQuestions: number;
     difficulty: "easy" | "medium" | "hard";
-  }) => apiRequest<GeneratedQuiz>("/ai/quiz/generate", { method: "POST", body }),
+  }) =>
+    // Generating from a long PDF can take a minute or two, far longer than a normal call.
+    apiRequest<GeneratedQuiz>("/ai/quiz/generate", { method: "POST", body, timeout: AI_REQUEST_TIMEOUT_MS }),
+};
+
+type RegistrationSelection = { semesterId: string; offeringIds: string[] };
+
+export const registrationApi = {
+  available: (semesterId?: string) =>
+    apiRequest<AvailableCourses>("/registrations/available", { query: { semesterId } }),
+
+  /** Validates and prices a selection on the server without saving anything. */
+  preview: (body: RegistrationSelection) =>
+    apiRequest<RegistrationPreview>("/registrations/preview", { method: "POST", body }),
+
+  /** Only WHICH courses are sent. Credits, fees and eligibility are decided by the server. */
+  submit: (body: RegistrationSelection) =>
+    apiRequest<Registration>("/registrations", { method: "POST", body }),
+
+  get: (id: string) => apiRequest<Registration>(`/registrations/${id}`),
+
+  pay: (id: string) =>
+    apiRequest<{ bkashURL: string; reused: boolean }>(`/registrations/${id}/pay`, { method: "POST" }),
+
+  /** Asks the gateway about a payment whose return never reached us. */
+  refreshPayment: (id: string) =>
+    apiRequest<Registration>(`/registrations/${id}/refresh-payment`, { method: "POST" }),
+
+  cancel: (id: string, body: { reason?: string; reject?: boolean } = {}) =>
+    apiRequest<Registration>(`/registrations/${id}/cancel`, { method: "POST", body }),
+
+  receipt: (id: string) => apiRequest<RegistrationReceipt>(`/registrations/${id}/receipt`),
+  receiptPdfUrl: (id: string) => `/api/v1/registrations/${id}/receipt.pdf`,
+};
+
+export const registrationAdminApi = {
+  settings: () => apiRequest<RegistrationSettingRow[]>("/registration-settings"),
+  saveSetting: (semesterId: string, body: RegistrationSettingValues) =>
+    apiRequest<RegistrationSettingRow>(`/registration-settings/${semesterId}`, { method: "PUT", body }),
+  stats: (query: Record<string, string | undefined>) =>
+    apiRequest<RegistrationStats>("/registrations/stats", { query }),
 };

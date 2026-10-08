@@ -42,3 +42,23 @@ export function formatCountdown(ms: number): string {
 export function todayLocalIso(): string {
   return new Date().toLocaleDateString("en-CA");
 }
+
+// A fixed "৳" and en-US digit grouping: the same text in every browser, unlike
+// Intl's currency style, whose symbol depends on the viewer's locale data.
+const taka = new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+/** Integer paisa -> "৳1,320.00". The API sends money as whole paisa, never floats. */
+export function formatPaisa(paisa: number): string {
+  return `৳${taka.format(paisa / 100)}`;
+}
+
+/** "120.50" (what an admin types) -> 12050 paisa, without floating-point arithmetic. */
+export function bdtToPaisa(value: string): number {
+  const [whole = "0", fraction = ""] = value.trim().split(".");
+  return Number(whole) * 100 + Number(fraction.padEnd(2, "0").slice(0, 2));
+}
+
+/** 12050 -> "120.50". */
+export function paisaToBdt(paisa: number): string {
+  return `${Math.floor(paisa / 100)}.${String(paisa % 100).padStart(2, "0")}`;
+}

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist_Mono, Inter } from "next/font/google";
 
 import { AppProviders } from "@/components/providers/app-providers";
+import { SPLASH_SKIP_SCRIPT } from "@/components/website/splash-config";
 import { publicEnv } from "@/lib/env";
 // Side-effect import: validates all server env vars when the app boots.
 import "@/lib/env.server";
@@ -49,6 +50,15 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       suppressHydrationWarning
       className={cn("h-full antialiased", inter.variable, geistMono.variable)}
     >
+      <head>
+        {/* Decides before the first paint whether the homepage splash is skipped
+            (already seen this session, or not the homepage), so returning visitors
+            never see it flash. It lives here, in the root layout, on purpose: React
+            warns when a <script> element is created on the client, which happened
+            when it sat in the public layout and the visitor navigated into it. The
+            root layout is only ever rendered by the server. */}
+        <script dangerouslySetInnerHTML={{ __html: SPLASH_SKIP_SCRIPT }} />
+      </head>
       <body className="bg-background text-foreground flex min-h-full flex-col">
         <AppProviders>{children}</AppProviders>
       </body>

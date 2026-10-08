@@ -89,12 +89,14 @@ export function SelectInputField({
   options,
   disabled,
   className,
+  hint,
 }: FieldProps & {
   label: string;
   placeholder: string;
   options: { value: string; label: string }[];
   disabled?: boolean;
   className?: string;
+  hint?: string;
 }) {
   const { errors, errorId, invalid } = useFieldErrors(field);
 
@@ -113,6 +115,7 @@ export function SelectInputField({
           ))}
         </SelectContent>
       </Select>
+      {hint ? <p className="text-muted-foreground text-xs">{hint}</p> : null}
       <FieldMessage id={errorId} errors={errors} />
     </div>
   );

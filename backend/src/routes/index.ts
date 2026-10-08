@@ -15,6 +15,8 @@ import { MaterialRouter } from "../module/material/material.router";
 import { NoticeRouter } from "../module/notice/notice.router";
 import { PaymentRouter } from "../module/payment/payment.router";
 import { QuizOfferingRouter, QuizRouter } from "../module/quiz/quiz.router";
+import { RegistrationRouter } from "../module/registration/registration.router";
+import { RegistrationSettingRouter } from "../module/registration-setting/registration-setting.router";
 import { ResultRouter } from "../module/result/result.router";
 import { SemesterRouter } from "../module/semester/semester.router";
 import { StudentRouter } from "../module/student/student.router";
@@ -60,6 +62,8 @@ router.use("/enrollments", EnrollmentRouter);
 router.use("/results", ResultRouter);
 router.use("/notices", NoticeRouter);
 router.use("/payments", PaymentRouter);
+router.use("/registrations", RegistrationRouter);
+router.use("/registration-settings", RegistrationSettingRouter);
 router.use("/admin", AdminRouter);
 router.use("/website-settings", WebsiteSettingsRouter);
 

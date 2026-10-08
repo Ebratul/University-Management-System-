@@ -1,0 +1,139 @@
+// Fees, credit limits and registration windows for one semester. All money is
+// stored in integer paisa (100 paisa = 1 BDT), never as floating point.
+model RegistrationSetting {
+  id String @id @default(uuid())
+
+  semesterId String   @unique
+  semester   Semester @relation(fields: [semesterId], references: [id])
+
+  // Per-credit rates. PROJECT, THESIS and OTHER courses use otherRate.
+  theoryRate      Int @default(0)
+  practicalRate   Int @default(0)
+  otherRate       Int @default(0)
+  registrationFee Int @default(0)
+
+  minCredits Float @default(0)
+  maxCredits Float @default(24)
+
+  registrationStart DateTime?
+  registrationEnd   DateTime?
+
+  lateEnabled Boolean   @default(false)
+  lateStart   DateTime?
+  lateEnd     DateTime?
+  lateFee     Int       @default(0)
+
+  // How long an unpaid invoice stays payable before it expires and frees the seats.
+  invoiceValidityHours Int @default(72)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("registration_settings")
+}
+
+// One student's registration for one semester. At most one live registration
+// per student and semester (partial unique index in the migration).
+model CourseRegistration {
+  id             String             @id @default(uuid())
+  registrationNo String             @unique
+  status         RegistrationStatus @default(SUBMITTED)
+  isLate         Boolean            @default(false)
+
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id])
+
+  semesterId String
+  semester   Semester @relation(fields: [semesterId], references: [id])
+
+  // Credit totals as they were when the registration was submitted.
+  theoryCredits    Float @default(0)
+  practicalCredits Float @default(0)
+  otherCredits     Float @default(0)
+  totalCredits     Float @default(0)
+
+  items   CourseRegistrationItem[]
+  invoice RegistrationInvoice?
+
+  submittedAt  DateTime  @default(now())
+  confirmedAt  DateTime?
+  cancelledAt  DateTime?
+  cancelReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([studentId])
+  @@index([semesterId, status])
+  @@index([status])
+  @@map("course_registrations")
+}
+
+// One selected course. The course facts and the price are copied here so a
+// later change to the course or the fee rates never rewrites history.
+model CourseRegistrationItem {
+  id String @id @default(uuid())
+
+  registrationId String
+  registration   CourseRegistration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+
+  courseOfferingId String
+  courseOffering   CourseOffering @relation(fields: [courseOfferingId], references: [id])
+
+  courseCode  String
+  courseTitle String
+  courseType  CourseType
+  credits     Float
+  rate        Int
+  amount      Int
+
+  @@unique([registrationId, courseOfferingId])
+  @@index([courseOfferingId])
+  @@map("course_registration_items")
+}
+
+// The bill for a registration: a frozen snapshot of credits, rates and fees.
+model RegistrationInvoice {
+  id        String        @id @default(uuid())
+  invoiceNo String        @unique
+  status    InvoiceStatus @default(UNPAID)
+
+  registrationId String             @unique
+  registration   CourseRegistration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id])
+
+  semesterId String
+  semester   Semester @relation(fields: [semesterId], references: [id])
+
+  theoryCredits    Float
+  practicalCredits Float
+  otherCredits     Float
+  totalCredits     Float
+
+  theoryRate    Int
+  practicalRate Int
+  otherRate     Int
+
+  theoryFee       Int
+  practicalFee    Int
+  otherFee        Int
+  registrationFee Int
+  lateFee         Int
+  totalAmount     Int
+
+  // The due date: after this an unpaid invoice expires.
+  expiresAt DateTime
+  paidAt    DateTime?
+
+  payments Payment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([studentId])
+  @@index([semesterId])
+  @@index([status, expiresAt])
+  @@map("registration_invoices")
+}

@@ -54,3 +54,31 @@ enum QuizAttemptStatus {
   SUBMITTED
   AUTO_SUBMITTED
 }
+
+enum CourseType {
+  THEORY
+  PRACTICAL
+  PROJECT
+  THESIS
+  OTHER
+}
+
+enum RegistrationStatus {
+  DRAFT
+  SUBMITTED
+  PAYMENT_PENDING
+  PAID
+  CONFIRMED
+  CANCELLED
+  REJECTED
+  EXPIRED
+}
+
+enum InvoiceStatus {
+  UNPAID
+  PENDING
+  PAID
+  FAILED
+  CANCELLED
+  EXPIRED
+}

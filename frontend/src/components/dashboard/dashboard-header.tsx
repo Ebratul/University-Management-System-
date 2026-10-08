@@ -32,7 +32,7 @@ export function DashboardHeader() {
   const setMobileNavOpen = useUiStore((state) => state.setMobileNavOpen);
 
   return (
-    <header className="bg-background/85 sticky top-0 z-40 border-b backdrop-blur-md">
+    <header className="bg-background/85 sticky top-0 z-40 border-b backdrop-blur-md print:hidden">
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
         <Logo />
 

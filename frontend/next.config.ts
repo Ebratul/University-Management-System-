@@ -13,6 +13,13 @@ const nextConfig: NextConfig = {
   },
   reactCompiler: true,
 
+  // The rewrite below proxies to the Express API. Next gives up on a proxied
+  // request after 30 s by default, which cuts off AI quiz generation (it can
+  // take a minute or two). Keep this above the longest legitimate API call.
+  experimental: {
+    proxyTimeout: 160_000,
+  },
+
   // Same-origin API: the browser calls /api/v1/* on this app, and Next
   // forwards it to Express. Auth cookies stay first-party, so sameSite=lax
   // works and no CORS setup is needed in the browser.

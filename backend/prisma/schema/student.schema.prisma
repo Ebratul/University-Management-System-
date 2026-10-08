@@ -21,6 +21,12 @@ model Student {
   attendances  Attendance[]
   quizAttempts QuizAttempt[]
 
+  // The semester level (1st, 2nd, ...) the student is currently in. Decides
+  // which offerings they may register. An admin advances it each semester.
+  currentSemesterLevel Int                   @default(1)
+  registrations        CourseRegistration[]
+  registrationInvoices RegistrationInvoice[]
+
   deletedAt DateTime?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt

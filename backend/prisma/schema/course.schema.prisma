@@ -1,9 +1,17 @@
 model Course {
-  id          String  @id @default(uuid())
-  courseCode  String  @unique
+  id          String     @id @default(uuid())
+  courseCode  String     @unique
   title       String
-  credits     Int
+  // Whole or half credits (1.5, 3, ...). Float is exact for multiples of 0.5;
+  // money is always computed from integer paisa, never from floats.
+  credits     Float
   description String?
+  courseType  CourseType @default(THEORY)
+
+  // A course that must be completed before this one can be registered.
+  prerequisiteId String?
+  prerequisite   Course?  @relation("CoursePrerequisite", fields: [prerequisiteId], references: [id])
+  requiredBy     Course[] @relation("CoursePrerequisite")
 
   departmentId String
   department   Department @relation(fields: [departmentId], references: [id])

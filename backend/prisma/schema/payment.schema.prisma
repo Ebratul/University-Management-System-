@@ -15,6 +15,12 @@ model Payment {
   semesterId String
   semester   Semester @relation(fields: [semesterId], references: [id])
 
+  // Set when this payment is for a course-registration invoice (otherwise it is semester tuition).
+  registrationInvoiceId String?
+  registrationInvoice   RegistrationInvoice? @relation(fields: [registrationInvoiceId], references: [id])
+  // The bKash checkout page for this attempt, so "Pay now" twice reuses one payment.
+  checkoutUrl           String?
+
   deletedAt DateTime?
   paidAt    DateTime?
   createdAt DateTime  @default(now())
@@ -22,6 +28,7 @@ model Payment {
 
   @@index([studentId])
   @@index([semesterId])
+  @@index([registrationInvoiceId])
   @@index([status])
   @@index([deletedAt])
   @@map("payments")

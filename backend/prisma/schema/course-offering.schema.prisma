@@ -1,6 +1,10 @@
 model CourseOffering {
-  id       String @id @default(uuid())
-  maxSeats Int    @default(40)
+  id                  String  @id @default(uuid())
+  maxSeats            Int     @default(40)
+  // Which semester level (1st, 2nd, ...) of the department this is offered to.
+  // null = open to every level of the course's department.
+  semesterLevel       Int?
+  registrationEnabled Boolean @default(true)
 
   courseId String
   course   Course @relation(fields: [courseId], references: [id])
@@ -15,6 +19,8 @@ model CourseOffering {
   materials   CourseMaterial[]
   attendances Attendance[]
   quizzes     Quiz[]
+
+  registrationItems CourseRegistrationItem[]
 
   deletedAt DateTime?
   createdAt DateTime  @default(now())

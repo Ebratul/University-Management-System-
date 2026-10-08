@@ -75,6 +75,15 @@ export const queryKeys = {
     results: (id: string, query?: object) => ["quiz", id, "results", query ?? {}] as const,
     myResult: (id: string) => ["quiz", id, "my-result"] as const,
   },
+  registrations: {
+    all: ["registrations"] as const,
+    available: (semesterId?: string) => ["registrations", "available", semesterId ?? "current"] as const,
+    list: (query?: ListQuery) => ["registrations", "list", query ?? {}] as const,
+    detail: (id: string) => ["registrations", "detail", id] as const,
+    stats: (query?: object) => ["registrations", "stats", query ?? {}] as const,
+    receipt: (id: string) => ["registrations", "receipt", id] as const,
+  },
+  registrationSettings: ["registration-settings"] as const,
   websiteSettings: ["website-settings"] as const,
   adminStats: ["admin", "dashboard-stats"] as const,
 } as const;

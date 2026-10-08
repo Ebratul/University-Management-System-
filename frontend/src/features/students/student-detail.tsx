@@ -23,7 +23,7 @@ import { toApiError } from "@/lib/api/errors";
 import { queryKeys } from "@/lib/api/query-keys";
 import { formatDate } from "@/lib/format";
 import { summariseApiError } from "@/lib/forms/server-errors";
-import { studentUpdateSchema, emptyToUndefined, type StudentUpdateInput } from "@/lib/validations/admin";
+import { emptyToUndefined, ordinal, SEMESTER_LEVELS, studentUpdateSchema, type StudentUpdateInput } from "@/lib/validations/admin";
 import type { Enrollment, Payment, StudentRecord } from "@/types/entities";
 
 const money = new Intl.NumberFormat("en-BD", { style: "currency", currency: "BDT", maximumFractionDigits: 0 });
@@ -94,12 +94,15 @@ export function StudentDetail({ id }: { id: string }) {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader><CardDescription>Phone</CardDescription><CardTitle className="text-base">{s.phone ?? "Not given"}</CardTitle></CardHeader>
         </Card>
         <Card>
           <CardHeader><CardDescription>Date of birth</CardDescription><CardTitle className="text-base">{s.dateOfBirth ? formatDate(s.dateOfBirth) : "Not given"}</CardTitle></CardHeader>
+        </Card>
+        <Card>
+          <CardHeader><CardDescription>Semester level</CardDescription><CardTitle className="text-base">{s.currentSemesterLevel ? `${ordinal(s.currentSemesterLevel)} semester` : "—"}</CardTitle></CardHeader>
         </Card>
         <Card>
           <CardHeader><CardDescription>Enrolments</CardDescription><CardTitle className="text-base">{enrollments.data?.meta.total ?? "—"}</CardTitle></CardHeader>
@@ -135,6 +138,7 @@ function StudentEditForm({ student, onDone }: { student: StudentRecord; onDone: 
         body: {
           name: values.name,
           departmentId: values.departmentId,
+          currentSemesterLevel: Number(values.currentSemesterLevel),
           phone: emptyToUndefined(values.phone),
           ...(values.dateOfBirth ? { dateOfBirth: values.dateOfBirth } : {}),
         },
@@ -150,6 +154,7 @@ function StudentEditForm({ student, onDone }: { student: StudentRecord; onDone: 
       phone: student.phone ?? "",
       dateOfBirth: student.dateOfBirth ? student.dateOfBirth.slice(0, 10) : "",
       departmentId: student.departmentId,
+      currentSemesterLevel: String(student.currentSemesterLevel ?? 1),
     },
     validators: { onSubmit: studentUpdateSchema },
     onSubmit: async ({ value }) => {
@@ -172,6 +177,17 @@ function StudentEditForm({ student, onDone }: { student: StudentRecord; onDone: 
         <form.Field name="dateOfBirth">{(field) => <TextInputField field={field} label="Date of birth (optional)" type="date" />}</form.Field>
       </div>
       <form.Field name="departmentId">{(field) => <SelectInputField field={field} label="Department" placeholder="Choose a department" options={departments.options} disabled={departments.isLoading} />}</form.Field>
+      <form.Field name="currentSemesterLevel">
+        {(field) => (
+          <SelectInputField
+            field={field}
+            label="Current semester level"
+            placeholder="Choose a level"
+            options={SEMESTER_LEVELS.map((level) => ({ value: level, label: `${ordinal(Number(level))} semester` }))}
+            hint="Decides which courses the student can register. Advance it each semester."
+          />
+        )}
+      </form.Field>
       <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting] as const}>
         {([canSubmit, isSubmitting]) => (
           <div className="flex justify-end gap-2 pt-2">

@@ -15,11 +15,18 @@ export type Department = DepartmentRef & {
   updatedAt: string;
 };
 
+export type CourseType = "THEORY" | "PRACTICAL" | "PROJECT" | "THESIS" | "OTHER";
+
 export type Course = {
   id: string;
   courseCode: string;
   title: string;
+  /** Whole or half credits (1.5, 3, ...). */
   credits: number;
+  description?: string | null;
+  courseType?: CourseType;
+  prerequisiteId?: string | null;
+  prerequisite?: { id: string; courseCode: string; title: string } | null;
   departmentId: string;
   department: DepartmentRef;
   createdAt: string;
@@ -54,6 +61,9 @@ export type Semester = {
 export type CourseOffering = {
   id: string;
   maxSeats: number;
+  /** The semester level (1st, 2nd, ...) this is offered to; null = every level. */
+  semesterLevel?: number | null;
+  registrationEnabled?: boolean;
   enrolledCount: number;
   seatsRemaining: number;
   course: Pick<Course, "id" | "courseCode" | "title" | "credits"> & {
@@ -95,6 +105,7 @@ export type CurrentUser = {
     id: string;
     studentId: string;
     registrationNumber: string;
+    currentSemesterLevel?: number;
     name: string;
     phone: string | null;
     dateOfBirth: string | null;
@@ -133,6 +144,7 @@ export type StudentRecord = {
   userId: string;
   studentId: string;
   registrationNumber: string;
+  currentSemesterLevel?: number;
   user?: { imageUrl: string };
   name: string;
   phone: string | null;
@@ -177,6 +189,8 @@ export type Payment = {
   createdAt: string;
   student: Pick<StudentRecord, "id" | "studentId" | "name">;
   semester: Pick<Semester, "id" | "code" | "year">;
+  /** Set when this payment settled a course-registration invoice. */
+  registrationInvoice?: { id: string; invoiceNo: string; registrationId: string } | null;
 };
 
 export type AuditLog = {
@@ -399,4 +413,231 @@ export type GeneratedQuiz = {
   requested: number;
   questions: QuizQuestionDraft[];
   warnings: string[];
+};
+
+// ------------------------- Course registration & fees -------------------------
+// All money in these types is integer paisa (100 paisa = 1 BDT).
+
+export type RegistrationStatus =
+  | "DRAFT"
+  | "SUBMITTED"
+  | "PAYMENT_PENDING"
+  | "PAID"
+  | "CONFIRMED"
+  | "CANCELLED"
+  | "REJECTED"
+  | "EXPIRED";
+
+export type InvoiceStatus = "UNPAID" | "PENDING" | "PAID" | "FAILED" | "CANCELLED" | "EXPIRED";
+
+export type RegistrationWindowState = "NOT_CONFIGURED" | "NOT_OPEN" | "OPEN" | "LATE" | "CLOSED";
+
+export type RegistrationPaymentRow = {
+  id: string;
+  status: PaymentStatus;
+  amount: number; // taka (existing Payment model)
+  transactionId: string | null;
+  paidAt: string | null;
+  failureReason: string | null;
+  createdAt: string;
+};
+
+export type RegistrationInvoice = {
+  id: string;
+  invoiceNo: string;
+  status: InvoiceStatus;
+  theoryCredits: number;
+  practicalCredits: number;
+  otherCredits: number;
+  totalCredits: number;
+  theoryRate: number;
+  practicalRate: number;
+  otherRate: number;
+  theoryFee: number;
+  practicalFee: number;
+  otherFee: number;
+  registrationFee: number;
+  lateFee: number;
+  totalAmount: number;
+  expiresAt: string;
+  paidAt: string | null;
+  createdAt: string;
+  payments: RegistrationPaymentRow[];
+};
+
+export type RegistrationItem = {
+  id: string;
+  courseOfferingId: string;
+  courseCode: string;
+  courseTitle: string;
+  courseType: CourseType;
+  credits: number;
+  rate: number;
+  amount: number;
+  courseOffering: { id: string; faculty: { id: string; name: string } };
+};
+
+export type Registration = {
+  id: string;
+  registrationNo: string;
+  status: RegistrationStatus;
+  isLate: boolean;
+  theoryCredits: number;
+  practicalCredits: number;
+  otherCredits: number;
+  totalCredits: number;
+  submittedAt: string;
+  confirmedAt: string | null;
+  cancelledAt: string | null;
+  cancelReason: string | null;
+  createdAt: string;
+  student: {
+    id: string;
+    studentId: string;
+    registrationNumber: string;
+    name: string;
+    userId: string;
+    currentSemesterLevel: number;
+    department: DepartmentRef;
+    user: { imageUrl: string };
+  };
+  semester: Pick<Semester, "id" | "code" | "year" | "status">;
+  items: RegistrationItem[];
+  invoice: RegistrationInvoice | null;
+  canPay: boolean;
+  canCancel: boolean;
+  paymentInProgress: boolean;
+  paymentRequired: boolean;
+};
+
+export type AvailableCourseState =
+  | "AVAILABLE"
+  | "COURSE_FULL"
+  | "PREREQUISITE_MISSING"
+  | "ALREADY_COMPLETED"
+  | "ALREADY_REGISTERED";
+
+export type AvailableCourse = {
+  offeringId: string;
+  courseCode: string;
+  title: string;
+  description: string | null;
+  credits: number;
+  courseType: CourseType;
+  teacher: string;
+  semesterLevel: number | null;
+  seats: { max: number; taken: number; remaining: number };
+  prerequisite: { courseCode: string; title: string } | null;
+  state: AvailableCourseState;
+  stateMessage: string | null;
+};
+
+export type FeeRates = {
+  theoryRate: number;
+  practicalRate: number;
+  otherRate: number;
+  registrationFee: number;
+  lateFee: number;
+};
+
+export type AvailableCourses = {
+  semester: Pick<Semester, "id" | "code" | "year" | "status"> | null;
+  student?: { currentSemesterLevel: number };
+  window?: {
+    state: RegistrationWindowState;
+    message: string | null;
+    registrationStart: string | null;
+    registrationEnd: string | null;
+    lateEnabled: boolean;
+    lateStart: string | null;
+    lateEnd: string | null;
+  };
+  fees?: FeeRates;
+  limits?: { minCredits: number; maxCredits: number };
+  existingRegistration: { id: string; registrationNo: string; status: RegistrationStatus } | null;
+  courses: AvailableCourse[];
+};
+
+export type RegistrationIssue = { offeringId: string | null; code: string; message: string };
+
+export type RegistrationSummary = {
+  semester: Pick<Semester, "id" | "code" | "year" | "status">;
+  windowState: RegistrationWindowState;
+  isLate: boolean;
+  limits: { minCredits: number; maxCredits: number };
+  courses: {
+    offeringId: string;
+    courseCode: string;
+    title: string;
+    courseType: CourseType;
+    credits: number;
+    teacher: string;
+    rate: number;
+    amount: number;
+  }[];
+  fees: {
+    theoryCredits: number;
+    practicalCredits: number;
+    otherCredits: number;
+    totalCredits: number;
+    theoryRate: number;
+    practicalRate: number;
+    otherRate: number;
+    theoryFee: number;
+    practicalFee: number;
+    otherFee: number;
+    registrationFee: number;
+    lateFee: number;
+    totalAmount: number;
+  };
+};
+
+export type RegistrationPreview = {
+  valid: boolean;
+  issues: RegistrationIssue[];
+  summary: RegistrationSummary;
+};
+
+export type RegistrationSettingValues = {
+  theoryRate: number;
+  practicalRate: number;
+  otherRate: number;
+  registrationFee: number;
+  minCredits: number;
+  maxCredits: number;
+  registrationStart: string | null;
+  registrationEnd: string | null;
+  lateEnabled: boolean;
+  lateStart: string | null;
+  lateEnd: string | null;
+  lateFee: number;
+  invoiceValidityHours: number;
+};
+
+export type RegistrationSettingRow = {
+  semester: Pick<Semester, "id" | "code" | "year" | "status"> & { startDate: string; endDate: string };
+  setting: RegistrationSettingValues;
+  configured: boolean;
+  windowState: RegistrationWindowState;
+};
+
+export type RegistrationStats = {
+  totalRegisteredStudents: number;
+  totalConfirmed: number;
+  totalPaid: number;
+  totalUnpaid: number;
+  totalPending: number;
+  totalCollected: number;
+  totalRegisteredCredits: number;
+  byStatus: Record<string, number>;
+};
+
+export type RegistrationReceipt = {
+  universityName: string;
+  student: { name: string; studentId: string; registrationNumber: string; department: string };
+  semester: string;
+  registration: { id: string; registrationNo: string; confirmedAt: string | null; isLate: boolean };
+  invoice: Omit<RegistrationInvoice, "id" | "status" | "expiresAt" | "createdAt" | "payments">;
+  payment: { id: string; transactionId: string | null; paidAt: string | null; paymentMethod: string } | null;
+  courses: { courseCode: string; courseTitle: string; credits: number; courseType: CourseType; amount: number }[];
 };

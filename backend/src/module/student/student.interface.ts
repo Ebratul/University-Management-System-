@@ -7,6 +7,7 @@ export interface ICreateStudentPayload {
 	dateOfBirth?: Date;
 	departmentId: string;
 	admissionSemesterId: string;
+	currentSemesterLevel?: number;
 }
 
 export interface IUpdateStudentPayload {
@@ -14,4 +15,5 @@ export interface IUpdateStudentPayload {
 	phone?: string;
 	dateOfBirth?: Date;
 	departmentId?: string;
+	currentSemesterLevel?: number;
 }

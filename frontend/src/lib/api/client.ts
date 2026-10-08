@@ -24,6 +24,8 @@ type RequestOptions = {
   method?: HttpMethod;
   body?: Record<string, unknown> | FormData;
   query?: ListQuery;
+  /** Milliseconds to wait for this call. Default 20 s; long jobs (AI generation) ask for more. */
+  timeout?: number;
 };
 
 // One refresh request at a time. If five requests fail with 401 together,
@@ -64,6 +66,7 @@ async function send<T>(
       method: options.method ?? "GET",
       body: options.body,
       query: stripUndefined(options.query),
+      timeout: options.timeout,
     });
   } catch (error) {
     const apiError = toApiError(error);

@@ -26,6 +26,7 @@ const CreateZodSchema = z.object({
 	dateOfBirth: z.coerce.date().optional(),
 	departmentId: z.uuid(),
 	admissionSemesterId: z.uuid(),
+	currentSemesterLevel: z.number().int().min(1).max(12).optional(),
 });
 
 const UpdateZodSchema = z.object({
@@ -33,6 +34,7 @@ const UpdateZodSchema = z.object({
 	phone: z.string().trim().min(6).max(20).optional(),
 	dateOfBirth: z.coerce.date().optional(),
 	departmentId: z.uuid().optional(),
+	currentSemesterLevel: z.number().int().min(1).max(12).optional(),
 });
 
 export const StudentValidation = { CreateZodSchema, UpdateZodSchema };

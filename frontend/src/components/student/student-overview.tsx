@@ -47,9 +47,14 @@ export function StudentOverview() {
         title={`Welcome, ${getDisplayName(user).split(" ")[0]}`}
         description="Your courses, results and fees at a glance."
         actions={
-          <Button asChild className="bg-brand-gradient text-white hover:opacity-90">
-            <Link href="/student/courses">Browse courses</Link>
-          </Button>
+          <>
+            <Button asChild variant="outline">
+              <Link href="/student/courses">Browse courses</Link>
+            </Button>
+            <Button asChild className="bg-brand-gradient text-white hover:opacity-90">
+              <Link href="/student/registration">Register courses</Link>
+            </Button>
+          </>
         }
       />
 

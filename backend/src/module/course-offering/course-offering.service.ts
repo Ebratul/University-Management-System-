@@ -25,6 +25,7 @@ const RELATION_SELECT = {
 			courseCode: true,
 			title: true,
 			credits: true,
+			courseType: true,
 			description: true,
 			department: { select: { id: true, name: true, code: true } },
 		},

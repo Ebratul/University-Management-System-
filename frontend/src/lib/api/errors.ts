@@ -26,6 +26,10 @@ export function toApiError(error: unknown): ApiError {
 
   if (error instanceof Error && "statusCode" in error) {
     const fetchError = error as FetchLikeError;
+    // No status and no body: the server never answered (timeout or dropped connection).
+    if (fetchError.statusCode === undefined && fetchError.data === undefined) {
+      return new ApiError("The server did not answer in time. Please wait a moment and try again.", 504);
+    }
     return new ApiError(
       fetchError.data?.message ?? "The request could not be completed.",
       fetchError.statusCode ?? 500,

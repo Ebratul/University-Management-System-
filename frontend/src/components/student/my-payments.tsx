@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { CreditCard, ExternalLink, Loader2 } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -33,7 +34,22 @@ export function MyPayments() {
   });
 
   const columns: Column<Payment>[] = [
-    { id: "semester", header: "Semester", cell: (p) => <span className="font-medium">{p.semester.code} {p.semester.year}</span> },
+    {
+      id: "semester",
+      header: "For",
+      cell: (p) => (
+        <div>
+          <span className="font-medium">{p.semester.code} {p.semester.year}</span>
+          {p.registrationInvoice ? (
+            <Link href={`/student/registration/${p.registrationInvoice.registrationId}`} className="text-primary block text-xs underline-offset-4 hover:underline">
+              Course registration · {p.registrationInvoice.invoiceNo}
+            </Link>
+          ) : (
+            <span className="text-muted-foreground block text-xs">Semester tuition</span>
+          )}
+        </div>
+      ),
+    },
     { id: "amount", header: "Amount", cell: (p) => <span className="tabular-nums">{money.format(p.amount)}</span> },
     { id: "status", header: "Status", cell: (p) => paymentBadge(p.status) },
     { id: "date", header: "Date", className: "hidden sm:table-cell", cell: (p) => <span className="text-muted-foreground text-sm">{formatDate(p.createdAt)}</span> },

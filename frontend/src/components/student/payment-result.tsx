@@ -26,6 +26,8 @@ export function PaymentResult({ paymentId }: { paymentId: string | null }) {
     queryFn: () => apiRequest<Payment>(`/payments/${paymentId}`),
     enabled: Boolean(paymentId),
     staleTime: 0,
+    // Still waiting for bKash to confirm? Look again every 2 seconds.
+    refetchInterval: (query) => (query.state.data?.status === "PENDING" ? 2_000 : false),
   });
 
   if (!paymentId) return <Notice tone="error" title="No payment selected" text="Start a payment from the Payments page." />;
@@ -33,6 +35,9 @@ export function PaymentResult({ paymentId }: { paymentId: string | null }) {
   if (payment.isError) return <Notice tone="error" title="We could not load this payment" text={payment.error.message} />;
 
   const p = payment.data;
+  // A course-registration payment: say what it was for and link to it.
+  const registration = p.registrationInvoice;
+  const purpose = registration ? "course registration" : `${p.semester.code} ${p.semester.year}`;
 
   return (
     <div className="space-y-8">
@@ -41,9 +46,9 @@ export function PaymentResult({ paymentId }: { paymentId: string | null }) {
       {p.status === "PENDING" ? (
         <Notice tone="pending" title="Confirming with bKash" text="This usually takes a few seconds. You can leave this page open; it updates by itself." />
       ) : p.status === "PAID" ? (
-        <Notice tone="success" title="Payment received" text={`${money.format(p.amount)} for ${p.semester.code} ${p.semester.year} was confirmed${p.paidAt ? ` on ${formatDate(p.paidAt)}` : ""}.`} />
+        <Notice tone="success" title="Payment received" text={`${money.format(p.amount)} for ${purpose}${registration ? ` (${p.semester.code} ${p.semester.year})` : ""} was confirmed${p.paidAt ? ` on ${formatDate(p.paidAt)}` : ""}.${registration ? " Your registration is now confirmed." : ""}`} />
       ) : (
-        <Notice tone="error" title="Payment did not go through" text={p.failureReason ? `The gateway reported: ${p.failureReason}.` : "No money was taken. You can try again from the Payments page."} />
+        <Notice tone="error" title="Payment did not go through" text={p.failureReason ? `The gateway reported: ${p.failureReason}.` : registration ? "Your registration is still saved. You can try the payment again." : "No money was taken. You can try again from the Payments page."} />
       )}
 
       <Card>
@@ -53,6 +58,8 @@ export function PaymentResult({ paymentId }: { paymentId: string | null }) {
         </CardHeader>
         <CardContent>
           <dl className="grid gap-3 text-sm sm:grid-cols-2">
+            <Row label="For" value={registration ? "Course registration" : "Semester tuition"} />
+            {registration ? <Row label="Invoice" value={registration.invoiceNo} mono /> : null}
             <Row label="Semester" value={`${p.semester.code} ${p.semester.year}`} />
             <Row label="Amount" value={money.format(p.amount)} />
             <Row label="Status" value={p.status.toLowerCase()} />
@@ -61,9 +68,25 @@ export function PaymentResult({ paymentId }: { paymentId: string | null }) {
         </CardContent>
       </Card>
 
-      <Button asChild variant="outline">
-        <Link href="/student/payments">Back to payments</Link>
-      </Button>
+      <div className="flex flex-wrap gap-3">
+        {registration ? (
+          <>
+            {p.status === "PAID" ? (
+              <Button asChild className="bg-brand-gradient text-white hover:opacity-90">
+                <Link href={`/student/registration/${registration.registrationId}/receipt`}>View receipt</Link>
+              </Button>
+            ) : null}
+            <Button asChild variant={p.status === "PAID" ? "outline" : "default"} className={p.status === "PAID" ? undefined : "bg-brand-gradient text-white hover:opacity-90"}>
+              <Link href={`/student/registration/${registration.registrationId}`}>
+                {p.status === "FAILED" ? "Retry payment" : "View registration"}
+              </Link>
+            </Button>
+          </>
+        ) : null}
+        <Button asChild variant="outline">
+          <Link href="/student/payments">Back to payments</Link>
+        </Button>
+      </div>
     </div>
   );
 }

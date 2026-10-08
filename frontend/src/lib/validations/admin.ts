@@ -35,6 +35,15 @@ const money = z
   .trim()
   .regex(/^\d+(\.\d{1,2})?$/, { error: "Enter an amount such as 5500 or 5500.50." });
 
+/** Whole or half credits, 0.5 to 10: "3", "1.5". */
+const halfCredits = z
+  .string()
+  .trim()
+  .regex(/^\d+(\.5)?$/, { error: "Credits must be a whole or half number, such as 3 or 1.5." })
+  .refine((value) => Number(value) >= 0.5 && Number(value) <= 10, {
+    error: "Credits must be between 0.5 and 10.",
+  });
+
 const requiredChoice = (label: string) => z.string().min(1, { error: `Choose a ${label}.` });
 
 const phone = optionalText(6, 20, "Phone");
@@ -62,8 +71,12 @@ export const semesterSchema = z
 export const courseSchema = z.object({
   courseCode: requiredText(2, 20, "Course code"),
   title: requiredText(2, 150, "Title"),
-  credits: wholeNumber(1, 10, "Credits"),
+  credits: halfCredits,
   departmentId: requiredChoice("department"),
+  courseType: z.enum(["THEORY", "PRACTICAL", "PROJECT", "THESIS", "OTHER"]),
+  /** "" or "none" = no prerequisite. */
+  prerequisiteId: z.string(),
+  description: optionalText(0, 2000, "Description"),
 });
 
 export const facultyCreateSchema = z.object({
@@ -89,11 +102,16 @@ export const offeringCreateSchema = z.object({
   maxSeats: z.string().trim().refine((value) => value === "" || /^\d+$/.test(value), {
     error: "Seats must be a whole number.",
   }),
+  /** "all" = open to every level, otherwise "1".."12". */
+  semesterLevel: z.string(),
+  registrationEnabled: z.boolean(),
 });
 
 export const offeringUpdateSchema = z.object({
   maxSeats: wholeNumber(1, 500, "Seats"),
   facultyId: requiredChoice("faculty member"),
+  semesterLevel: z.string(),
+  registrationEnabled: z.boolean(),
 });
 
 export const adminUserSchema = z.object({
@@ -108,6 +126,7 @@ export const studentUpdateSchema = z.object({
   phone,
   dateOfBirth: z.string(),
   departmentId: requiredChoice("department"),
+  currentSemesterLevel: wholeNumber(1, 12, "Semester level"),
 });
 
 export const noticeSchema = z.object({
@@ -162,3 +181,21 @@ export const resultSchema = z.object({
 });
 
 export type ResultInput = z.infer<typeof resultSchema>;
+
+/** Semester level choices for selects: 1st to 12th. */
+export const SEMESTER_LEVELS = Array.from({ length: 12 }, (_, i) => String(i + 1));
+
+export const COURSE_TYPE_OPTIONS = [
+  { value: "THEORY", label: "Theory" },
+  { value: "PRACTICAL", label: "Practical / Lab" },
+  { value: "PROJECT", label: "Project" },
+  { value: "THESIS", label: "Thesis" },
+  { value: "OTHER", label: "Other" },
+];
+
+const SUFFIXES = ["th", "st", "nd", "rd"];
+/** 1 -> "1st", 2 -> "2nd", 11 -> "11th". */
+export function ordinal(n: number): string {
+  const v = n % 100;
+  return `${n}${SUFFIXES[(v - 20) % 10] ?? SUFFIXES[v] ?? SUFFIXES[0]}`;
+}
