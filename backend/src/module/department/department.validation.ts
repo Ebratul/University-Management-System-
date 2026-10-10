@@ -8,6 +8,7 @@ const CreateZodSchema = z.object({
 		.min(2)
 		.max(20)
 		.transform((value) => value.toUpperCase()),
+	universityId: z.uuid().nullable().optional(),
 });
 
 const UpdateZodSchema = z.object({
@@ -19,6 +20,7 @@ const UpdateZodSchema = z.object({
 		.max(20)
 		.transform((value) => value.toUpperCase())
 		.optional(),
+	universityId: z.uuid().nullable().optional(),
 });
 
 export const DepartmentValidation = { CreateZodSchema, UpdateZodSchema };

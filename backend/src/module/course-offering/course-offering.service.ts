@@ -159,6 +159,8 @@ const getOfferings = async (
 		semesterId?: string;
 		courseId?: string;
 		facultyId?: string;
+		departmentId?: string;
+		semesterLevel?: string;
 	},
 ) => {
 	const { page, limit, skip, sortBy, sortOrder } = calculatePagination(
@@ -172,6 +174,17 @@ const getOfferings = async (
 	if (query.semesterId) andConditions.push({ semesterId: query.semesterId });
 	if (query.courseId) andConditions.push({ courseId: query.courseId });
 	if (query.facultyId) andConditions.push({ facultyId: query.facultyId });
+	if (query.departmentId) {
+		andConditions.push({ course: { departmentId: query.departmentId } });
+	}
+	if (query.semesterLevel) {
+		const level = Number(query.semesterLevel);
+		if (!Number.isInteger(level) || level < 1 || level > 12) {
+			throw new AppError(httpStatus.BAD_REQUEST, "Invalid semester level.");
+		}
+		// An offering with no level is open to every level of its department.
+		andConditions.push({ OR: [{ semesterLevel: level }, { semesterLevel: null }] });
+	}
 	const where: Prisma.CourseOfferingWhereInput = { AND: andConditions };
 
 	const [offerings, total] = await Promise.all([

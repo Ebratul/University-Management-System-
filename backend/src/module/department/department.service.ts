@@ -16,6 +16,19 @@ import type {
 const CACHE_PREFIX = "departments:";
 const CACHE_TTL_SECONDS = 600; // Departments change rarely; cache reads, invalidate on writes.
 
+const UNIVERSITY_SELECT = { select: { id: true, name: true } };
+
+const assertUniversityExists = async (universityId?: string | null) => {
+	if (!universityId) return;
+	const university = await prisma.university.findUnique({
+		where: { id: universityId },
+		select: { id: true },
+	});
+	if (!university) {
+		throw new AppError(httpStatus.NOT_FOUND, "University not found.");
+	}
+};
+
 const createDepartment = async (
 	payload: ICreateDepartmentPayload,
 	actor: IActor,
@@ -33,7 +46,11 @@ const createDepartment = async (
 		);
 	}
 
-	const department = await prisma.department.create({ data: payload });
+	await assertUniversityExists(payload.universityId);
+	const department = await prisma.department.create({
+		data: payload,
+		include: { university: UNIVERSITY_SELECT },
+	});
 	await cacheInvalidateByPrefix(CACHE_PREFIX);
 	await recordAuditLog({
 		action: "DEPARTMENT_CREATED",
@@ -76,6 +93,7 @@ const getDepartments = async (query: IQuery) => {
 			skip,
 			take: limit,
 			orderBy: { [sortBy]: sortOrder },
+			include: { university: UNIVERSITY_SELECT },
 		}),
 		prisma.department.count({ where }),
 	]);
@@ -88,6 +106,7 @@ const getDepartments = async (query: IQuery) => {
 const getDepartmentById = async (id: string) => {
 	const department = await prisma.department.findFirst({
 		where: { id, deletedAt: null },
+		include: { university: UNIVERSITY_SELECT },
 	});
 	if (!department) {
 		throw new AppError(httpStatus.NOT_FOUND, "Department not found.");
@@ -121,9 +140,11 @@ const updateDepartment = async (
 		}
 	}
 
+	await assertUniversityExists(payload.universityId);
 	const updated = await prisma.department.update({
 		where: { id },
 		data: payload,
+		include: { university: UNIVERSITY_SELECT },
 	});
 	await cacheInvalidateByPrefix(CACHE_PREFIX);
 	await recordAuditLog({

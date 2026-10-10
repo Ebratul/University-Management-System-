@@ -29,7 +29,15 @@ const RegisterZodSchema = z.object({
 	phone: z.string().trim().min(6).max(20).optional(),
 	dateOfBirth: z.coerce.date().optional(),
 	departmentId: z.uuid("Invalid department id."),
-	admissionSemesterId: z.uuid("Invalid semester id."),
+	// Optional: when omitted the server uses the current (or next) semester.
+	admissionSemesterId: z.uuid("Invalid semester id.").optional(),
+	// The student's academic semester (1st-8th). Sent as text in multipart.
+	semesterLevel: z.coerce
+		.number("Semester is required.")
+		.int("Invalid semester.")
+		.min(1, "Semester must be between 1 and 8.")
+		.max(8, "Semester must be between 1 and 8.")
+		.default(1),
 });
 
 const LoginZodSchema = z.object({

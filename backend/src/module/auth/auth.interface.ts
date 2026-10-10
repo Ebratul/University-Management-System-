@@ -6,7 +6,8 @@ export interface IRegisterPayload {
 	phone?: string;
 	dateOfBirth?: Date;
 	departmentId: string;
-	admissionSemesterId: string;
+	admissionSemesterId?: string;
+	semesterLevel?: number;
 }
 
 export interface ILoginPayload {

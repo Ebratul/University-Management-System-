@@ -11,6 +11,7 @@ import httpStatus from "http-status";
 
 import config from "./config";
 import { validateEnv } from "./config/validateEnv";
+import { DocsRouter } from "./docs/docs.router";
 import { globalErrorHandler } from "./middleware/globalErrorHandler";
 import { notFound } from "./middleware/notFound";
 import { generalLimiter } from "./middleware/rateLimiter";
@@ -29,6 +30,9 @@ const app: Application = express();
 // reverse proxy/load balancer — without this every request looks like it
 // comes from the proxy's own address in production.
 app.set("trust proxy", 1);
+
+// API documentation (Swagger UI). Before helmet(): it sets its own CSP.
+app.use("/docs", DocsRouter);
 
 app.use(helmet());
 app.use(
@@ -54,7 +58,7 @@ app.get("/", (_req: Request, res: Response) => {
 		success: true,
 		statusCode: httpStatus.OK,
 		message: "Welcome to the University Management System Backend API!",
-		data: { docs: "/api/v1/health" },
+		data: { docs: "/docs", health: "/api/v1/health" },
 	});
 });
 

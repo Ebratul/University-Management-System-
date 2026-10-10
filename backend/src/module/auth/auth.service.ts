@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 
 import { Prisma, Role } from "@prisma/client";
-import type { UploadApiResponse } from "cloudinary";
 import bcrypt from "bcryptjs";
+import type { UploadApiResponse } from "cloudinary";
 import httpStatus from "http-status";
 import jwt, { type JwtPayload, type SignOptions } from "jsonwebtoken";
 
@@ -88,6 +88,23 @@ const issueAuthSession = async (user: TSessionUser, name: string) => {
 
 const PICTURE_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
+// With no semester chosen, admit into the ongoing semester, else the next
+// upcoming one, else the most recent.
+const findDefaultAdmissionSemester = async () => {
+	const live = { deletedAt: null };
+	return (
+		(await prisma.semester.findFirst({
+			where: { ...live, status: "ONGOING" },
+			orderBy: { startDate: "desc" },
+		})) ??
+		(await prisma.semester.findFirst({
+			where: { ...live, status: "UPCOMING" },
+			orderBy: { startDate: "asc" },
+		})) ??
+		prisma.semester.findFirst({ where: live, orderBy: { startDate: "desc" } })
+	);
+};
+
 const register = async (
 	payload: IRegisterPayload,
 	picture: Express.Multer.File | undefined,
@@ -129,9 +146,11 @@ const register = async (
 		prisma.department.findFirst({
 			where: { id: payload.departmentId, deletedAt: null },
 		}),
-		prisma.semester.findFirst({
-			where: { id: payload.admissionSemesterId, deletedAt: null },
-		}),
+		payload.admissionSemesterId
+			? prisma.semester.findFirst({
+					where: { id: payload.admissionSemesterId, deletedAt: null },
+				})
+			: findDefaultAdmissionSemester(),
 	]);
 
 	if (!department) {
@@ -180,6 +199,7 @@ const register = async (
 						dateOfBirth: payload.dateOfBirth,
 						departmentId: department.id,
 						admissionSemesterId: semester.id,
+						currentSemesterLevel: payload.semesterLevel ?? 1,
 					},
 				},
 			},
@@ -359,9 +379,14 @@ const logout = async (token?: string) => {
 	await prisma.refreshToken.deleteMany({ where: { token: sha256(token) } });
 };
 
+// One answer for every "this Google account may not sign in" case, so the
+// response does not reveal whether an address, domain or account exists.
+const GOOGLE_DENIED = "This Google account is not authorized to sign in.";
+
 const googleLogin = async (payload: IGoogleLoginPayload) => {
 	let email: string | undefined;
 	let sub: string | undefined;
+	let emailVerified = false;
 
 	try {
 		const ticket = await googleClient.verifyIdToken({
@@ -371,6 +396,7 @@ const googleLogin = async (payload: IGoogleLoginPayload) => {
 		const ticketPayload = ticket.getPayload();
 		email = ticketPayload?.email;
 		sub = ticketPayload?.sub;
+		emailVerified = ticketPayload?.email_verified === true;
 	} catch {
 		throw new AppError(
 			httpStatus.UNAUTHORIZED,
@@ -378,7 +404,7 @@ const googleLogin = async (payload: IGoogleLoginPayload) => {
 		);
 	}
 
-	if (!email || !sub) {
+	if (!email || !sub || !emailVerified) {
 		throw new AppError(
 			httpStatus.BAD_REQUEST,
 			"Google account has no verified email.",
@@ -386,22 +412,46 @@ const googleLogin = async (payload: IGoogleLoginPayload) => {
 	}
 
 	email = email.toLowerCase();
+	const domain = email.slice(email.lastIndexOf("@") + 1);
+
+	// The domain must belong to an active university; it also tells us which
+	// role this address is expected to have.
+	const university = await prisma.university.findFirst({
+		where: {
+			isActive: true,
+			OR: [{ studentDomain: domain }, { teacherDomain: domain }],
+		},
+	});
+	if (!university) throw new AppError(httpStatus.FORBIDDEN, GOOGLE_DENIED);
+	const expectedRole =
+		university.studentDomain === domain ? Role.STUDENT : Role.FACULTY;
+
+	// A matching domain is never enough: the user must already exist, be active,
+	// hold exactly the expected role, and belong to this university.
 	const user = await prisma.user.findFirst({
 		where: { email, deletedAt: null },
+		include: {
+			student: { select: { department: { select: { universityId: true } } } },
+			faculty: { select: { department: { select: { universityId: true } } } },
+		},
 	});
+	const affiliation =
+		expectedRole === Role.STUDENT
+			? user?.student?.department.universityId
+			: user?.faculty?.department.universityId;
 
-	if (!user) {
-		throw new AppError(
-			httpStatus.NOT_FOUND,
-			"No account found for this Google email. Please register first.",
-		);
+	if (
+		!user ||
+		!user.isActive ||
+		user.role !== expectedRole ||
+		affiliation !== university.id
+	) {
+		throw new AppError(httpStatus.FORBIDDEN, GOOGLE_DENIED);
 	}
 
-	if (!user.isActive) {
-		throw new AppError(
-			httpStatus.FORBIDDEN,
-			"Your account has been deactivated. Please contact support.",
-		);
+	// An account already linked to one Google identity cannot be taken over by another.
+	if (user.googleId && user.googleId !== sub) {
+		throw new AppError(httpStatus.FORBIDDEN, GOOGLE_DENIED);
 	}
 
 	if (user.googleId !== sub || !user.emailVerified) {

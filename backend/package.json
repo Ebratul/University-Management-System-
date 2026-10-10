@@ -19,7 +19,8 @@
     "lint:fix": "npx @biomejs/biome lint --write ./src",
     "prisma:generate": "prisma generate",
     "migrate:deploy": "prisma migrate deploy",
-    "seed": "prisma db seed"
+    "seed": "prisma db seed",
+    "docs:build": "tsx scripts/build-openapi.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.12",

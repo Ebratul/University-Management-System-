@@ -1,0 +1,19 @@
+// One university and the email domains its Google accounts use. The domains
+// decide which role a Google sign-in is *expected* to have; access still needs
+// an existing, active user whose role and department's university match.
+model University {
+  id            String  @id @default(uuid())
+  name          String  @unique
+  // Lower-case host names, e.g. "student.sust.edu". Each is unique across all
+  // universities (the service also stops a student domain equalling any teacher domain).
+  studentDomain String  @unique
+  teacherDomain String  @unique
+  isActive      Boolean @default(true)
+
+  departments Department[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("universities")
+}

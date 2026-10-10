@@ -20,6 +20,7 @@ import { RegistrationSettingRouter } from "../module/registration-setting/regist
 import { ResultRouter } from "../module/result/result.router";
 import { SemesterRouter } from "../module/semester/semester.router";
 import { StudentRouter } from "../module/student/student.router";
+import { UniversityRouter } from "../module/university/university.router";
 import { UserRoutes } from "../module/user/user.router";
 import { WebsiteSettingsRouter } from "../module/website-settings/website-settings.router";
 
@@ -48,6 +49,7 @@ router.get("/health", async (_req, res) => {
 router.use("/auth", AuthRouter);
 router.use("/ai", AiRouter);
 router.use("/users", UserRoutes);
+router.use("/universities", UniversityRouter);
 router.use("/departments", DepartmentRouter);
 router.use("/faculties", FacultyRouter);
 router.use("/students", StudentRouter);

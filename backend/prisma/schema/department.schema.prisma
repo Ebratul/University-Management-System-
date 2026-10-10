@@ -4,6 +4,11 @@ model Department {
   code      String    @unique
   deletedAt DateTime?
 
+  // Which university this department belongs to. Google sign-in needs it to match
+  // the user's email domain. null = not assigned yet.
+  universityId String?
+  university   University? @relation(fields: [universityId], references: [id])
+
   faculties Faculty[]
   courses   Course[]
   students  Student[]
@@ -12,5 +17,6 @@ model Department {
   updatedAt DateTime @updatedAt
 
   @@index([deletedAt])
+  @@index([universityId])
   @@map("departments")
 }
