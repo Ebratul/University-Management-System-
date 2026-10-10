@@ -3,7 +3,8 @@ import { openApiSpec } from "./openapi";
 
 // Swagger UI, loaded from a CDN so nothing extra is bundled into the API.
 const SWAGGER_UI_VERSION = "5.17.14";
-const CDN = `https://cdn.jsdelivr.net/npm/swagger-ui-dist@${SWAGGER_UI_VERSION}`;
+const CDN_HOST = "https://cdn.jsdelivr.net";
+const CDN = `${CDN_HOST}/npm/swagger-ui-dist@${SWAGGER_UI_VERSION}`;
 
 const page = `<!doctype html>
 <html lang="en">
@@ -38,9 +39,11 @@ router.get("/", (_req, res) => {
 		[
 			"default-src 'self'",
 			"base-uri 'self'",
-			// The trailing slash matters: without it a CSP path source matches only that one file.
-			`script-src 'self' 'unsafe-inline' ${CDN}/`,
-			`style-src 'self' 'unsafe-inline' ${CDN}/`,
+			// Host-only source: path-based CSP sources are matched inconsistently
+			// across browsers (and redirects), so allow the CDN host itself.
+			`script-src 'self' 'unsafe-inline' ${CDN_HOST}`,
+			`style-src 'self' 'unsafe-inline' ${CDN_HOST}`,
+			`font-src 'self' data: ${CDN_HOST}`,
 			"img-src 'self' data: https:",
 			"connect-src 'self'",
 			"frame-ancestors 'none'",
