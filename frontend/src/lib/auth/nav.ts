@@ -5,6 +5,7 @@ export type AppNavItem = { label: string; href: string; roles: Role[] };
 /** Admin areas, shown in the admin sub-navigation. Each route lives under /admin. */
 export const ADMIN_NAV: AppNavItem[] = [
   { label: "Overview", href: "/admin", roles: ["ADMIN"] },
+  { label: "Universities", href: "/admin/universities", roles: ["ADMIN"] },
   { label: "Departments", href: "/admin/departments", roles: ["ADMIN"] },
   { label: "Semesters", href: "/admin/semesters", roles: ["ADMIN"] },
   { label: "Courses", href: "/admin/courses", roles: ["ADMIN"] },

@@ -12,10 +12,13 @@ const publicEnvSchema = z.object({
   NEXT_PUBLIC_APP_URL: z.url({
     error: "NEXT_PUBLIC_APP_URL must be a full URL, e.g. http://localhost:3000",
   }),
+  // Optional: without it the "Continue with Google" button is hidden.
+  NEXT_PUBLIC_GOOGLE_CLIENT_ID: z.string().optional(),
 });
 
 const parsed = publicEnvSchema.safeParse({
   NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+  NEXT_PUBLIC_GOOGLE_CLIENT_ID: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || undefined,
 });
 
 if (!parsed.success) {

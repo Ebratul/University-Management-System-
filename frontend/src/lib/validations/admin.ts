@@ -52,7 +52,32 @@ const designation = optionalText(2, 100, "Designation");
 export const departmentSchema = z.object({
   name: requiredText(2, 150, "Name"),
   code: requiredText(2, 20, "Code"),
+  /** A university id, or "none" when the department is not assigned. */
+  universityId: z.string(),
 });
+
+/** Mirrors backend university.validation.ts. */
+const DOMAIN_PATTERN = /^(?=.{4,253}$)[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$/;
+const domainField = (label: string) =>
+  z
+    .string()
+    .trim()
+    .toLowerCase()
+    .refine((value) => DOMAIN_PATTERN.test(value.replace(/^@/, "")), {
+      error: `${label} must look like student.example.edu (no @ or spaces).`,
+    });
+
+export const universitySchema = z
+  .object({
+    name: requiredText(2, 150, "Name"),
+    studentDomain: domainField("Student domain"),
+    teacherDomain: domainField("Teacher domain"),
+    isActive: z.boolean(),
+  })
+  .refine((data) => data.studentDomain.replace(/^@/, "") !== data.teacherDomain.replace(/^@/, ""), {
+    error: "The student and teacher domains must be different.",
+    path: ["teacherDomain"],
+  });
 
 export const semesterSchema = z
   .object({
@@ -143,6 +168,7 @@ export const websiteSettingsSchema = z.object({
 /** Converts an optional string field to undefined when empty, so it is omitted from the body. */
 export const emptyToUndefined = (value: string | undefined) => (value && value.trim() !== "" ? value.trim() : undefined);
 
+export type UniversityInput = z.infer<typeof universitySchema>;
 export type DepartmentInput = z.infer<typeof departmentSchema>;
 export type SemesterInput = z.infer<typeof semesterSchema>;
 export type CourseInput = z.infer<typeof courseSchema>;

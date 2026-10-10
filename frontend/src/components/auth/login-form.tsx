@@ -7,6 +7,7 @@ import { useForm } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Eye, EyeOff, Loader2 } from "lucide-react";
 
+import { GoogleSignIn } from "@/components/auth/google-sign-in";
 import { FieldMessage } from "@/components/forms/field-message";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -171,6 +172,8 @@ export function LoginForm({ next, expired }: { next: string | null; expired: boo
           </Button>
         )}
       </form.Subscribe>
+
+      <GoogleSignIn next={next} />
 
       <p className="text-muted-foreground text-center text-sm">
         New student?{" "}

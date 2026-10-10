@@ -11,6 +11,20 @@ export type DepartmentRef = {
 };
 
 export type Department = DepartmentRef & {
+  universityId?: string | null;
+  university?: { id: string; name: string } | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+/** A university and the email domains its Google accounts use (admin only). */
+export type University = {
+  id: string;
+  name: string;
+  studentDomain: string;
+  teacherDomain: string;
+  isActive: boolean;
+  _count?: { departments: number };
   createdAt: string;
   updatedAt: string;
 };

@@ -10,7 +10,7 @@ import { FormDialog } from "@/components/admin/form-dialog";
 import { ListToolbar, useListSearch } from "@/components/admin/list-toolbar";
 import { Pagination } from "@/components/admin/pagination";
 import { FormAlert } from "@/components/forms/form-alert";
-import { TextInputField } from "@/components/forms/form-fields";
+import { SelectInputField, TextInputField } from "@/components/forms/form-fields";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/shared/page-header";
@@ -23,9 +23,11 @@ import { queryKeys } from "@/lib/api/query-keys";
 import { formatDate } from "@/lib/format";
 import { summariseApiError } from "@/lib/forms/server-errors";
 import { departmentSchema, type DepartmentInput } from "@/lib/validations/admin";
-import type { Department } from "@/types/entities";
+import type { Department, University } from "@/types/entities";
 
 const FILTER_KEYS: string[] = [];
+/** Radix Select cannot hold an empty value, so "no university" is a sentinel. */
+const NO_UNIVERSITY = "none";
 
 export function DepartmentsManager() {
   const list = useListState(FILTER_KEYS);
@@ -58,6 +60,12 @@ export function DepartmentsManager() {
       header: "Code",
       sortKey: "code",
       cell: (department) => <Badge variant="outline" className="font-mono">{department.code}</Badge>,
+    },
+    {
+      id: "university",
+      header: "University",
+      className: "hidden md:table-cell",
+      cell: (department) => <span className="text-muted-foreground">{department.university?.name ?? "Not assigned"}</span>,
     },
     {
       id: "createdAt",
@@ -150,18 +158,25 @@ export function DepartmentsManager() {
 function DepartmentForm({ item, onDone }: { item: Department | null; onDone: () => void }) {
   const [serverError, setServerError] = useState<{ message: string; details: string[] } | null>(null);
 
+  const universities = useApiQuery({
+    queryKey: queryKeys.universities.list({ limit: 100, sortBy: "name", sortOrder: "asc" }),
+    queryFn: () => apiListRequest<University>("/universities", { limit: 100, sortBy: "name", sortOrder: "asc" }),
+  });
+
   const save = useApiMutation<Department, DepartmentInput>({
-    mutationFn: (values) =>
-      item
-        ? apiRequest<Department>(`/departments/${item.id}`, { method: "PATCH", body: values })
-        : apiRequest<Department>("/departments", { method: "POST", body: values }),
+    mutationFn: ({ universityId, ...values }) => {
+      const body = { ...values, universityId: universityId === NO_UNIVERSITY ? null : universityId };
+      return item
+        ? apiRequest<Department>(`/departments/${item.id}`, { method: "PATCH", body })
+        : apiRequest<Department>("/departments", { method: "POST", body });
+    },
     notifyError: false,
     successMessage: item ? "Department updated." : "Department created.",
     invalidate: [queryKeys.departments.all, queryKeys.adminStats],
   });
 
   const form = useForm({
-    defaultValues: { name: item?.name ?? "", code: item?.code ?? "" },
+    defaultValues: { name: item?.name ?? "", code: item?.code ?? "", universityId: item?.universityId ?? NO_UNIVERSITY },
     validators: { onSubmit: departmentSchema },
     onSubmit: async ({ value }) => {
       setServerError(null);
@@ -191,6 +206,18 @@ function DepartmentForm({ item, onDone }: { item: Department | null; onDone: () 
       </form.Field>
       <form.Field name="code">
         {(field) => <TextInputField field={field} label="Code" placeholder="CSE" hint="Two to twenty characters. Shown in upper case." />}
+      </form.Field>
+
+      <form.Field name="universityId">
+        {(field) => (
+          <SelectInputField
+            field={field}
+            label="University"
+            placeholder={universities.isPending ? "Loading universities…" : "Not assigned"}
+            options={[{ value: NO_UNIVERSITY, label: "Not assigned" }, ...(universities.data?.data.map((u) => ({ value: u.id, label: u.name })) ?? [])]}
+            hint="Google sign-in only works for users whose department belongs to the university that owns their email domain."
+          />
+        )}
       </form.Field>
 
       <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting] as const}>

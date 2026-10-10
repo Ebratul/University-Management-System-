@@ -62,7 +62,10 @@ const registerBaseSchema = z.object({
       error: "Enter a valid date.",
     }),
   departmentId: z.uuid({ error: "Choose your department." }),
-  admissionSemesterId: z.uuid({ error: "Choose your admission semester." }),
+  /** Academic semester 1-8, as text because it comes from a select. */
+  semesterLevel: z
+    .string()
+    .regex(/^[1-8]$/, { error: "Select your semester." }),
 });
 
 export const registerSchema = registerBaseSchema.refine(
@@ -80,7 +83,7 @@ export function toRegisterPayload(values: RegisterFormInput) {
   body.append("password", values.password);
   body.append("registrationNumber", values.registrationNumber);
   body.append("departmentId", values.departmentId);
-  body.append("admissionSemesterId", values.admissionSemesterId);
+  body.append("semesterLevel", values.semesterLevel);
   if (values.phone) body.append("phone", values.phone);
   if (values.dateOfBirth) body.append("dateOfBirth", values.dateOfBirth);
   if (values.picture) body.append("picture", values.picture);

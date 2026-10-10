@@ -8,6 +8,10 @@ import type { ListQuery } from "@/types/api";
 export const queryKeys = {
   me: ["me"] as const,
 
+  universities: {
+    all: ["universities"] as const,
+    list: (query?: ListQuery) => ["universities", "list", query ?? {}] as const,
+  },
   departments: {
     all: ["departments"] as const,
     list: (query?: ListQuery) => ["departments", "list", query ?? {}] as const,
@@ -29,6 +33,10 @@ export const queryKeys = {
   courseOfferings: {
     all: ["course-offerings"] as const,
     list: (query?: ListQuery) => ["course-offerings", "list", query ?? {}] as const,
+  },
+  catalogOfferings: {
+    forSemester: (departmentId: string, semesterLevel: string) =>
+      ["course-offerings", "catalog", departmentId, semesterLevel] as const,
   },
   notices: {
     all: ["notices"] as const,

@@ -51,6 +51,10 @@ export const authApi = {
   login: async (body: LoginInput) =>
     (await apiRequest<AuthResponse>("/auth/login", { method: "POST", body })).user,
 
+  /** Google Identity Services credential (an ID token). The API checks the university domain. */
+  google: async (idToken: string) =>
+    (await apiRequest<AuthResponse>("/auth/google", { method: "POST", body: { idToken } })).user,
+
   /** Multipart: text fields plus the required `picture` file. */
   register: (body: FormData) =>
     apiRequest<RegisterResult>("/auth/register", { method: "POST", body }),
@@ -89,6 +93,17 @@ export const catalogApi = {
       limit: 100,
       sortBy: "year",
       sortOrder: "desc",
+    }),
+};
+
+export const offeringCatalogApi = {
+  /** Offerings for one department + academic semester level (public endpoint). */
+  forSemester: (params: { departmentId: string; semesterLevel: number; semesterId?: string }) =>
+    apiListRequest<CourseOffering>("/course-offerings", {
+      limit: 100,
+      sortBy: "createdAt",
+      sortOrder: "asc",
+      ...params,
     }),
 };
 

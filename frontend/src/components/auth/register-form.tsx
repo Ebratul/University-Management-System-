@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { useApiQuery } from "@/hooks/use-api-query";
-import { authApi, catalogApi } from "@/lib/api/endpoints";
+import { authApi, catalogApi, offeringCatalogApi } from "@/lib/api/endpoints";
 import { toApiError } from "@/lib/api/errors";
 import { queryKeys } from "@/lib/api/query-keys";
 import { registerSchema, toRegisterPayload, type RegisterFormInput } from "@/lib/validations/auth";
@@ -29,8 +29,13 @@ const emptyValues: RegisterFormInput = {
   phone: "",
   dateOfBirth: "",
   departmentId: "",
-  admissionSemesterId: "",
+  semesterLevel: "",
 };
+
+const SEMESTER_LEVELS = ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th"].map((label, index) => ({
+  value: String(index + 1),
+  label: `${label} Semester`,
+}));
 
 export function RegisterForm() {
   const router = useRouter();
@@ -39,10 +44,6 @@ export function RegisterForm() {
   const departments = useApiQuery({
     queryKey: queryKeys.departments.list({ limit: 100, sortBy: "name", sortOrder: "asc" }),
     queryFn: catalogApi.departments,
-  });
-  const semesters = useApiQuery({
-    queryKey: queryKeys.semesters.list({ limit: 100, sortBy: "year", sortOrder: "desc" }),
-    queryFn: catalogApi.semesters,
   });
 
   const register = useApiMutation({
@@ -74,7 +75,7 @@ export function RegisterForm() {
     },
   });
 
-  const catalogReady = departments.isSuccess && semesters.isSuccess;
+  const catalogReady = departments.isSuccess;
 
   return (
     <form
@@ -148,23 +149,28 @@ export function RegisterForm() {
               )}
             </form.Field>
 
-            <form.Field name="admissionSemesterId">
+            <form.Field name="semesterLevel">
               {(field) => (
-                <SelectField
-                  field={field}
-                  label="Admission semester"
-                  placeholder="Choose a semester"
-                  options={semesters.data?.data.map((s) => ({ value: s.id, label: `${s.code} ${s.year}` })) ?? []}
-                />
+                <SelectField field={field} label="Select Semester" placeholder="Choose your semester" options={SEMESTER_LEVELS} />
               )}
             </form.Field>
+
+            <form.Subscribe
+              selector={(state) =>
+                [state.values.departmentId, state.values.semesterLevel] as const
+              }
+            >
+              {([departmentId, semesterLevel]) => (
+                <SemesterCourses departmentId={departmentId} semesterLevel={semesterLevel} />
+              )}
+            </form.Subscribe>
           </>
         ) : (
           <div className="space-y-5 sm:col-span-2" aria-live="polite">
             <p className="text-muted-foreground text-sm">
-              {departments.isError || semesters.isError
-                ? "We couldn't load departments and semesters. Refresh the page to try again."
-                : "Loading departments and semesters…"}
+              {departments.isError
+                ? "We couldn't load departments. Refresh the page to try again."
+                : "Loading departments…"}
             </p>
             <Skeleton className="h-11 w-full" />
             <Skeleton className="h-11 w-full" />
@@ -199,6 +205,55 @@ export function RegisterForm() {
         </Link>
       </p>
     </form>
+  );
+}
+
+/** Courses already assigned (by an admin) to the chosen department and semester. Read-only. */
+function SemesterCourses({
+  departmentId,
+  semesterLevel,
+}: {
+  departmentId: string;
+  semesterLevel: string;
+}) {
+  const enabled = Boolean(departmentId && semesterLevel);
+  const offerings = useApiQuery({
+    queryKey: queryKeys.catalogOfferings.forSemester(departmentId, semesterLevel),
+    queryFn: () =>
+      offeringCatalogApi.forSemester({
+        departmentId,
+        semesterLevel: Number(semesterLevel),
+      }),
+    enabled,
+  });
+
+  if (!enabled) return null;
+
+  // One course can be offered in several calendar semesters; list it once.
+  const courses = [...new Map((offerings.data?.data ?? []).map((o) => [o.course.id, o.course])).values()];
+
+  return (
+    <div className="space-y-2 sm:col-span-2" aria-live="polite">
+      <Label>Courses for this semester</Label>
+      {offerings.isPending ? (
+        <Skeleton className="h-11 w-full" />
+      ) : offerings.isError ? (
+        <p className="text-muted-foreground text-sm">We couldn&apos;t load the courses. They will be available after you sign in.</p>
+      ) : courses.length === 0 ? (
+        <p className="text-muted-foreground text-sm">No courses are assigned to this semester and department yet.</p>
+      ) : (
+        <ul className="divide-y rounded-lg border text-sm">
+          {courses.map((course) => (
+            <li key={course.id} className="flex items-center justify-between gap-3 px-3 py-2">
+              <span className="min-w-0 truncate">
+                <span className="font-medium">{course.courseCode}</span> · {course.title}
+              </span>
+              <span className="text-muted-foreground shrink-0 text-xs">{course.credits} cr</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 
