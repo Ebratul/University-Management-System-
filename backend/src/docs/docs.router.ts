@@ -38,8 +38,9 @@ router.get("/", (_req, res) => {
 		[
 			"default-src 'self'",
 			"base-uri 'self'",
-			`script-src 'self' 'unsafe-inline' ${CDN}`,
-			`style-src 'self' 'unsafe-inline' ${CDN}`,
+			// The trailing slash matters: without it a CSP path source matches only that one file.
+			`script-src 'self' 'unsafe-inline' ${CDN}/`,
+			`style-src 'self' 'unsafe-inline' ${CDN}/`,
 			"img-src 'self' data: https:",
 			"connect-src 'self'",
 			"frame-ancestors 'none'",
